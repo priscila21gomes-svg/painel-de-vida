@@ -67,7 +67,7 @@ function Sidebar({ pagina, aberto, onFechar }) {
         <div className="px-6 pt-4 pb-2 text-center border-t border-white/25 mx-4 mt-3">
           <p className="font-semibold text-lg leading-snug">{dados.config.slogan}</p>
         </div>
-        <img src="/img/mascote.svg" alt="Mascote" className="w-24 mx-auto mb-2 animate-flutuar [@media(max-height:860px)]:hidden" />
+        <img src="img/mascote.svg" alt="Mascote" className="w-24 mx-auto mb-2 animate-flutuar [@media(max-height:860px)]:hidden" />
         <a href={link("admin")} onClick={onFechar} className="mx-auto mb-4 flex items-center gap-1.5 text-xs text-white/70 hover:text-white">
           <Settings className="w-3.5 h-3.5" /> Área administrativa
         </a>

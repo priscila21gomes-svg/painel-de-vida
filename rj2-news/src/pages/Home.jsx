@@ -11,7 +11,7 @@ function Hero() {
   return (
     <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-laranja-600 via-laranja-500 to-laranja-400 text-white shadow-card animate-entrar">
       <div className="absolute inset-y-0 right-0 w-full md:w-[58%]">
-        <img src={edicao.capaImagem || "/img/operacao.svg"} alt="" className="w-full h-full object-cover" />
+        <img src={edicao.capaImagem || "img/operacao.svg"} alt="" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-laranja-500 via-laranja-500/70 md:via-laranja-500/30 to-transparent" />
       </div>
       <div className="relative grid md:grid-cols-[1fr_auto] gap-6 p-6 md:p-10">

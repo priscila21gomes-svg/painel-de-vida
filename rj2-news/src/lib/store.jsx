@@ -31,7 +31,7 @@ function gravarLocal(chave, valor, armazenamento = localStorage) {
 }
 
 async function carregarArquivo() {
-  const r = await fetch(`/conteudo.json?v=${Date.now()}`);
+  const r = await fetch(`conteudo.json?v=${Date.now()}`);
   if (!r.ok) throw new Error("Não foi possível carregar o conteudo.json");
   return r.json();
 }
