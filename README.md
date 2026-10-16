@@ -42,3 +42,7 @@ Isso é opcional. Sem configurar, o app funciona normalmente usando apenas o `lo
 6. Pronto — o painel passa a ler e salvar o estado no Supabase automaticamente, e a cada ~10 minutos de uso grava um snapshot na tabela `historico`.
 
 **Sobre segurança:** as políticas de acesso (RLS) desse esquema liberam leitura e escrita para quem tiver a chave `anon` do projeto — que fica embutida no código do site, então qualquer pessoa que inspecionar o app consegue lê-la. Isso está no mesmo nível de proteção do login simples do app (não é uma autenticação real). Para um painel realmente privado, o próximo passo seria ativar o Supabase Auth e restringir as políticas ao seu usuário autenticado — se quiser isso, é só pedir.
+
+## RJ2 News
+
+O jornal semanal interno do RJ2 é um app separado, na pasta [`rj2-news/`](./rj2-news) — veja o README de lá.
