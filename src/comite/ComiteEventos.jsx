@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   CalendarCheck, Calendar as CalendarIcon, FolderOpen, ClipboardList, ListChecks, Lightbulb,
   Home, Plus, Search, Bell, ChevronLeft, ChevronRight, ChevronDown, X, Trash2, Pencil,
-  Download, Link as LinkIcon, Upload, Star, Check, Clock, MapPin, User, Users, Megaphone,
+  Download, Link as LinkIcon, Upload, Star, Check, Clock, MapPin, User, Users,
   Loader2, Heart, Folder, Cloud, CloudOff, ExternalLink, FileText, Image as ImageIcon,
 } from "lucide-react";
 import { carregarComite, salvarComite, sincronizaNaNuvem } from "./storage.js";
+import { Mascote, MascoteRosto, Ilustracao, ILUSTRACOES, ilustracaoPadrao } from "./ilustracoes.jsx";
 
 // ---------- tema Shopee ----------
 const S = {
@@ -21,12 +22,12 @@ const S = {
 };
 
 const TIPOS = [
-  { id: "campanha", label: "Campanhas", cor: "#EE4D2D" },
-  { id: "treinamento", label: "Treinamentos", cor: "#2F80ED" },
-  { id: "reuniao", label: "Reuniões", cor: "#F5A623" },
-  { id: "operacional", label: "Ações Operacionais", cor: "#27AE60" },
-  { id: "comemoracao", label: "Comemorações", cor: "#E5487A" },
-  { id: "outro", label: "Outros", cor: "#9CA3AF" },
+  { id: "campanha", label: "Campanhas", emoji: "📣", cor: "#EE4D2D" },
+  { id: "treinamento", label: "Treinamentos", emoji: "📚", cor: "#2F80ED" },
+  { id: "reuniao", label: "Reuniões", emoji: "🤝", cor: "#F5A623" },
+  { id: "operacional", label: "Ações Operacionais", emoji: "🛠️", cor: "#27AE60" },
+  { id: "comemoracao", label: "Comemorações", emoji: "🎉", cor: "#E5487A" },
+  { id: "outro", label: "Outros", emoji: "✨", cor: "#9CA3AF" },
 ];
 const tipoInfo = (id) => TIPOS.find((t) => t.id === id) || TIPOS[TIPOS.length - 1];
 
@@ -115,7 +116,7 @@ function estadoInicial() {
   const mes = agora.getMonth();
   const dia = (d, m = mes) => toISO(new Date(ano, m, d));
   const ev = (d, titulo, tipo, horaInicio = "", horaFim = "", descricao = "", m) => ({ id: uid(), titulo, data: dia(d, m), horaInicio, horaFim, tipo, descricao, responsavel: "", local: "" });
-  const pasta = (nome, cor, destaque, descricao) => ({ id: uid(), nome, cor, destaque, descricao, link: "", arquivos: [] });
+  const pasta = (nome, cor, destaque, descricao) => ({ id: uid(), nome, cor, destaque, descricao, ilustracao: ilustracaoPadrao(nome), link: "", arquivos: [] });
 
   return {
     usuario: "Priscila Nascimento",
@@ -312,7 +313,7 @@ function ModalEvento({ evento, membros, onSalvar, onExcluir, onFechar }) {
           <div className="flex flex-wrap gap-2">
             {TIPOS.map((t) => (
               <button type="button" key={t.id} onClick={() => set("tipo", t.id)} className="flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1.5" style={{ background: f.tipo === t.id ? t.cor : t.cor + "14", color: f.tipo === t.id ? "#fff" : t.cor }}>
-                <span className="w-2 h-2 rounded-full" style={{ background: f.tipo === t.id ? "#fff" : t.cor }} />{t.label}
+                <span>{t.emoji}</span>{t.label}
               </button>
             ))}
           </div>
@@ -421,7 +422,19 @@ function ModalPasta({ pasta, onSalvar, onExcluir, onFechar }) {
         <Campo label="Nome da campanha / pasta"><Input autoFocus value={f.nome} onChange={(e) => set("nome", e.target.value)} placeholder="Ex: Black Friday" /></Campo>
         <Campo label="Descrição curta"><Input value={f.descricao} onChange={(e) => set("descricao", e.target.value)} placeholder="Ex: Materiais e comunicação" /></Campo>
         <Campo label="Link da pasta completa (Drive, SharePoint...)"><Input value={f.link} onChange={(e) => set("link", e.target.value)} placeholder="https://..." /></Campo>
-        <Campo label="Imagem de capa (aparece na pasta e nos Destaques do mês)"><CampoImagem value={f.capa || ""} onChange={(v) => set("capa", v)} cor={f.cor} /></Campo>
+        <Campo label="Ilustração">
+          <div className="flex gap-2 flex-wrap">
+            {[...Object.entries(ILUSTRACOES), ["nenhuma", { label: "Sem ilustração" }]].map(([id, il]) => {
+              const ativo = (f.ilustracao || ilustracaoPadrao(f.nome)) === id;
+              return (
+                <button type="button" key={id} title={il.label} onClick={() => set("ilustracao", id)} className="w-16 h-12 rounded-lg overflow-hidden flex items-center justify-center" style={{ background: il.fundo || "#F3F4F6", outline: ativo ? `3px solid ${S.laranja}` : `1px solid ${S.linha}`, outlineOffset: ativo ? 1 : 0 }}>
+                  {id === "nenhuma" ? <X size={16} color={S.tintaSuave} /> : <Ilustracao id={id} className="w-full h-full" />}
+                </button>
+              );
+            })}
+          </div>
+        </Campo>
+        <Campo label="Ou uma foto/arte de capa (fica por cima da ilustração)"><CampoImagem value={f.capa || ""} onChange={(v) => set("capa", v)} cor={f.cor} /></Campo>
         <Campo label="Cor">
           <div className="flex gap-2 flex-wrap">
             {CORES_PASTA.map((c) => (
@@ -631,7 +644,7 @@ function LegendaTipos({ eventos }) {
       {TIPOS.map((t) => (
         <div key={t.id} className="flex items-center gap-2 text-sm" style={{ color: S.tinta }}>
           <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: t.cor }} />
-          <span className="flex-1 truncate">{t.label}</span>
+          <span className="flex-1 truncate">{t.label} <span className="text-xs">{t.emoji}</span></span>
           <span className="text-xs font-bold" style={{ color: S.tintaSuave }}>{contagem(t.id)}</span>
         </div>
       ))}
@@ -670,13 +683,22 @@ function botaoDownloadProps(arquivo) {
   return { href: arquivo.link, target: "_blank", rel: "noreferrer" };
 }
 
+const ilustracaoDa = (pasta) => pasta.ilustracao || ilustracaoPadrao(pasta.nome);
+
 function CapaPasta({ pasta, altura = 88 }) {
+  const il = ilustracaoDa(pasta);
+  if (il === "nenhuma" && !pasta.capa) {
+    return (
+      <div className="rounded-xl flex items-center justify-center relative overflow-hidden" style={{ height: altura, background: `linear-gradient(135deg, ${pasta.cor}, ${pasta.cor}B3)` }}>
+        <Folder size={altura * 0.42} color="#fff" fill="rgba(255,255,255,0.25)" />
+      </div>
+    );
+  }
+  const fundo = ILUSTRACOES[il]?.fundo || S.laranjaClaro;
   return (
-    <div className="rounded-xl flex items-center justify-center relative overflow-hidden" style={{ height: altura, background: `linear-gradient(135deg, ${pasta.cor}, ${pasta.cor}B3)` }}>
+    <div className="rounded-xl flex items-center justify-center relative overflow-hidden" style={{ height: altura, background: `linear-gradient(160deg, #fff 0%, ${fundo} 70%)`, borderBottom: `3px solid ${pasta.cor}` }}>
       {pasta.capa && <img src={pasta.capa} alt="" className="absolute inset-0 w-full h-full object-cover z-10" onError={(e) => (e.currentTarget.style.display = "none")} />}
-      <Folder size={altura * 0.42} color="#fff" fill="rgba(255,255,255,0.25)" />
-      <span className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-      <span className="absolute -left-3 -top-5 w-12 h-12 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
+      {il !== "nenhuma" && <Ilustracao id={il} className="h-full w-full p-1" />}
     </div>
   );
 }
@@ -941,7 +963,7 @@ function AbaDemandas({ state, update, abrirDemanda, novaDemanda, busca }) {
             </Select>
           </div>
 
-          {lista.length === 0 && <p className="text-sm italic py-8 text-center" style={{ color: S.tintaSuave }}>Nenhuma demanda com esses filtros.</p>}
+          {lista.length === 0 && <div className="flex flex-col items-center py-6"><Mascote size={100} /><p className="text-sm" style={{ color: S.tintaSuave }}>Nenhuma demanda com esses filtros.</p></div>}
           <div className="flex flex-col gap-2">
             {lista.map((d) => {
               const st = statusInfo(d.status);
@@ -1033,7 +1055,7 @@ function AbaPassos({ state, update }) {
           <BotaoPrimario onClick={add}><Plus size={16} /> Adicionar</BotaoPrimario>
         </div>
         <div className="flex flex-col gap-2">
-          {pendentes.length === 0 && <p className="text-sm italic text-center py-4" style={{ color: S.tintaSuave }}>Tudo em dia! 🎉</p>}
+          {pendentes.length === 0 && <div className="flex flex-col items-center py-4"><Mascote size={110} /><p className="text-sm font-semibold" style={{ color: S.laranja }}>Tudo em dia! 🎉</p></div>}
           {pendentes.map((p) => <LinhaPasso key={p.id} p={p} membros={state.membros} alterar={alterar} remover={remover} />)}
         </div>
         {feitos.length > 0 && (
@@ -1068,7 +1090,7 @@ function AbaIdeias({ state, update }) {
         <TextArea rows={3} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Qual a sua ideia para o próximo evento?" className="w-full" />
         <div className="flex justify-end mt-2"><BotaoPrimario onClick={add}><Lightbulb size={16} /> Enviar ideia</BotaoPrimario></div>
       </Card>
-      {ordenadas.length === 0 && <p className="text-sm italic text-center py-6" style={{ color: S.tintaSuave }}>Nenhuma ideia ainda — que tal ser a primeira pessoa?</p>}
+      {ordenadas.length === 0 && <div className="flex flex-col items-center py-6"><Mascote size={120} /><p className="text-sm" style={{ color: S.tintaSuave }}>Nenhuma ideia ainda — que tal ser a primeira pessoa? 💡</p></div>}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {ordenadas.map((i) => (
           <Card key={i.id} className="p-4 flex flex-col gap-3">
@@ -1090,13 +1112,11 @@ function AbaIdeias({ state, update }) {
 function Banner() {
   return (
     <div className="rounded-2xl p-5 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${S.laranjaClaro}, #FFE2D6)`, border: `1px solid ${S.laranjaBorda}` }}>
-      <div className="relative z-10 pr-20">
+      <div className="relative z-10 pr-24 py-2">
         <p className="text-lg font-extrabold leading-tight" style={{ color: S.tinta }}>Eventos que engajam pessoas e constroem</p>
         <p className="text-2xl font-black leading-tight" style={{ color: S.laranja }}>grandes histórias!</p>
       </div>
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center" style={{ background: S.laranja, boxShadow: "0 8px 24px rgba(238,77,45,0.35)" }}>
-        <Megaphone size={38} color="#fff" />
-      </div>
+      <Mascote pose="megafone" size={118} className="absolute right-0 bottom-0" />
       <span className="absolute -right-6 -top-6 w-24 h-24 rounded-full" style={{ background: "rgba(238,77,45,0.08)" }} />
     </div>
   );
@@ -1127,9 +1147,32 @@ function Indicadores({ state }) {
   );
 }
 
+function Saudacao({ state }) {
+  const agora = new Date();
+  const h = agora.getHours();
+  const oi = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  const primeiroNome = (state.usuario || "").split(" ")[0];
+  const deHoje = state.eventos.filter((e) => e.data === hojeISO()).sort(ordenarEventos);
+  const frase = deHoje.length === 0 ? "Nenhum evento hoje — bom momento para adiantar as demandas! 💪"
+    : deHoje.length === 1 ? `Hoje tem ${tipoInfo(deHoje[0].tipo).emoji} ${deHoje[0].titulo}${deHoje[0].horaInicio ? " às " + deHoje[0].horaInicio : ""}. Bora!`
+    : `Hoje tem ${deHoje.length} atividades no calendário. Bora! 🚀`;
+  return (
+    <div className="rounded-2xl relative overflow-hidden flex items-center gap-3 pl-2 pr-5" style={{ background: `linear-gradient(90deg, ${S.laranjaClaro}, #fff)`, border: `1px solid ${S.laranjaBorda}` }}>
+      <Mascote size={84} className="shrink-0 self-end" />
+      <div className="py-3 min-w-0">
+        <p className="text-lg font-extrabold" style={{ color: S.tinta }}>{oi}{primeiroNome ? `, ${primeiroNome}` : ""}! 👋</p>
+        <p className="text-sm" style={{ color: S.tintaSuave }}>{fmtLonga(hojeISO()).replace(/^./, (c) => c.toUpperCase())} · {frase}</p>
+      </div>
+      <span className="hidden md:block absolute right-6 top-3 text-2xl rotate-12">🎈</span>
+      <span className="hidden md:block absolute right-20 bottom-2 text-xl -rotate-12">🎉</span>
+    </div>
+  );
+}
+
 function AbaVisaoGeral({ state, onNovoEvento, onAbrirEvento, irParaPasta }) {
   return (
     <div className="flex flex-col gap-5">
+      <Saudacao state={state} />
       <Indicadores state={state} />
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px] items-start">
         <Card className="p-4 sm:p-5 min-w-0">
@@ -1391,7 +1434,7 @@ export default function ComiteEventos() {
             <BuscaGlobal state={state} valor={busca} setValor={setBusca} irPara={irPara} />
             <Notificacoes state={state} abrirDemanda={(d) => { setAba("demandas"); abrirDemanda(d); }} abrirEvento={abrirEvento} />
             <button onClick={trocarUsuario} title="Trocar nome" className="hidden sm:flex items-center gap-2 rounded-full pl-1 pr-3 py-1" style={{ background: "#fff" }}>
-              <Avatar nome={state.usuario || "?"} size={34} />
+              <span className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ background: S.laranjaClaro }}><MascoteRosto size={30} /></span>
               <span className="text-left leading-tight">
                 <span className="block text-sm font-bold max-w-[150px] truncate" style={{ color: S.tinta }}>{state.usuario || "Definir nome"}</span>
                 <span className="block text-[11px]" style={{ color: S.tintaSuave }}>Comitê de Eventos</span>
