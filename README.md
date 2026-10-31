@@ -28,6 +28,21 @@ Por padrão, os dados do painel ficam salvos no `localStorage` do navegador de c
 
 **Login padrão:** e-mail `priscila.21.gomes@gmail.com`, senha `vida12345` (definidos em `src/App.jsx`). É só uma trava simples de privacidade, não uma autenticação segura de verdade — qualquer pessoa com acesso ao código consegue ver essas credenciais.
 
+## Central de Eventos — Comitê de Eventos
+
+Uma segunda página, separada do Painel da Vida, com tema Shopee (branco e laranja):
+
+- **Visão Geral:** calendário de eventos (semana / mês / lista), destaques do mês com download, atividades da semana e tipos de eventos.
+- **Calendário:** clique em um dia para criar um evento (tipo, horário, responsável, local).
+- **Materiais Regionais:** pastas por campanha com links (Drive, Canva, SharePoint...) ou arquivos de até 2 MB para download.
+- **Demandas:** controle de demandas com responsável, prazo, prioridade e status, mais o cadastro da equipe.
+- **Próximos Passos:** checklist com responsável e prazo.
+- **Ideias e Sugestões:** mural com votos.
+
+Endereço: `/comite-eventos.html` (na Vercel também funciona `/comite`). Localmente: `npm run dev` e abra `http://localhost:5173/comite-eventos.html`.
+
+Os dados ficam no navegador e, se o Supabase estiver configurado, numa linha própria (`id = comite-eventos`) da tabela `estado` — assim todo o comitê vê as mesmas informações. Essa página não tem login.
+
 ## Conectar ao Supabase (banco de dados + histórico)
 
 Isso é opcional. Sem configurar, o app funciona normalmente usando apenas o `localStorage`.

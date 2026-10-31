@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/comite", "destination": "/comite-eventos.html" },
+    { "source": "/comite-eventos", "destination": "/comite-eventos.html" }
+  ]
+}
