@@ -3,7 +3,7 @@ import {
   CalendarCheck, Calendar as CalendarIcon, FolderOpen, ClipboardList, ListChecks, Lightbulb,
   Home, Plus, Search, Bell, ChevronLeft, ChevronRight, ChevronDown, X, Trash2, Pencil,
   Download, Link as LinkIcon, Upload, Star, Check, Clock, MapPin, User, Users, Megaphone,
-  Loader2, Heart, Folder, Cloud, CloudOff, ExternalLink, FileText,
+  Loader2, Heart, Folder, Cloud, CloudOff, ExternalLink, FileText, Image as ImageIcon,
 } from "lucide-react";
 import { carregarComite, salvarComite, sincronizaNaNuvem } from "./storage.js";
 
@@ -53,6 +53,35 @@ const DIAS_CURTOS = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
 const DIAS_LONGOS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
 const LIMITE_UPLOAD_MB = 2;
+
+// Reduz a imagem no navegador antes de salvar (capa nunca passa de ~800px),
+// para não estourar o armazenamento local nem deixar o painel lento.
+function reduzirImagem(file, maxLado = 800, qualidade = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const escala = Math.min(1, maxLado / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * escala);
+        canvas.height = Math.round(img.height * escala);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", qualidade));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+const ehImagem = (a) => (a.dataUrl ? a.dataUrl.startsWith("data:image/") : /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(a.link || ""));
+const srcArquivo = (a) => a.dataUrl || a.link;
 
 // ---------- utilidades de data ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -347,6 +376,37 @@ function ModalDemanda({ demanda, membros, eventos, onSalvar, onExcluir, onFechar
   );
 }
 
+function CampoImagem({ value, onChange, cor = S.laranja }) {
+  const ref = useRef(null);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState("");
+  const enviar = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setErro("Escolha um arquivo de imagem (JPG, PNG, WEBP...)."); return; }
+    setErro(""); setCarregando(true);
+    try { onChange(await reduzirImagem(file)); } catch { setErro("Não foi possível ler essa imagem."); }
+    setCarregando(false);
+  };
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-24 h-16 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: value ? "#eee" : cor + "1A", border: `1px dashed ${value ? "transparent" : cor}` }}>
+        {value ? <img src={value} alt="" className="w-full h-full object-cover" /> : carregando ? <Loader2 size={18} className="animate-spin" color={cor} /> : <ImageIcon size={20} color={cor} />}
+      </div>
+      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => ref.current?.click()} className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1.5" style={{ background: S.laranja, color: "#fff" }}><Upload size={13} /> Enviar imagem</button>
+          {value && <button type="button" onClick={() => onChange("")} className="text-xs font-semibold" style={{ color: "#D32F2F" }}>Remover</button>}
+        </div>
+        <Input value={value && !value.startsWith("data:") ? value : ""} onChange={(e) => onChange(e.target.value.trim())} placeholder="ou cole o link de uma imagem" />
+        {erro && <span className="text-xs font-normal" style={{ color: "#D32F2F" }}>{erro}</span>}
+      </div>
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={enviar} />
+    </div>
+  );
+}
+
 function ModalPasta({ pasta, onSalvar, onExcluir, onFechar }) {
   const [f, setF] = useState(pasta);
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
@@ -361,6 +421,7 @@ function ModalPasta({ pasta, onSalvar, onExcluir, onFechar }) {
         <Campo label="Nome da campanha / pasta"><Input autoFocus value={f.nome} onChange={(e) => set("nome", e.target.value)} placeholder="Ex: Black Friday" /></Campo>
         <Campo label="Descrição curta"><Input value={f.descricao} onChange={(e) => set("descricao", e.target.value)} placeholder="Ex: Materiais e comunicação" /></Campo>
         <Campo label="Link da pasta completa (Drive, SharePoint...)"><Input value={f.link} onChange={(e) => set("link", e.target.value)} placeholder="https://..." /></Campo>
+        <Campo label="Imagem de capa (aparece na pasta e nos Destaques do mês)"><CampoImagem value={f.capa || ""} onChange={(v) => set("capa", v)} cor={f.cor} /></Campo>
         <Campo label="Cor">
           <div className="flex gap-2 flex-wrap">
             {CORES_PASTA.map((c) => (
@@ -612,6 +673,7 @@ function botaoDownloadProps(arquivo) {
 function CapaPasta({ pasta, altura = 88 }) {
   return (
     <div className="rounded-xl flex items-center justify-center relative overflow-hidden" style={{ height: altura, background: `linear-gradient(135deg, ${pasta.cor}, ${pasta.cor}B3)` }}>
+      {pasta.capa && <img src={pasta.capa} alt="" className="absolute inset-0 w-full h-full object-cover z-10" onError={(e) => (e.currentTarget.style.display = "none")} />}
       <Folder size={altura * 0.42} color="#fff" fill="rgba(255,255,255,0.25)" />
       <span className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
       <span className="absolute -left-3 -top-5 w-12 h-12 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
@@ -657,6 +719,7 @@ function DestaquesDoMes({ pastas, irParaPasta }) {
 
 function AbaMateriais({ state, update, pastaAberta, setPastaAberta, busca }) {
   const [modalPasta, setModalPasta] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [nomeArq, setNomeArq] = useState("");
   const [linkArq, setLinkArq] = useState("");
   const [erroUpload, setErroUpload] = useState("");
@@ -684,17 +747,15 @@ function AbaMateriais({ state, update, pastaAberta, setPastaAberta, busca }) {
     setNomeArq(""); setLinkArq("");
   };
   const enviarArquivo = (e) => {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
-    if (!file) return;
-    if (file.size > LIMITE_UPLOAD_MB * 1024 * 1024) {
-      setErroUpload(`Arquivo maior que ${LIMITE_UPLOAD_MB} MB. Para arquivos grandes, suba no Drive/SharePoint e cole o link.`);
-      return;
-    }
-    setErroUpload("");
-    const reader = new FileReader();
-    reader.onload = () => atualizarArquivos((a) => [...a, { id: uid(), nome: file.name, dataUrl: reader.result, tamanho: file.size, adicionadoEm: hojeISO(), por: state.usuario }]);
-    reader.readAsDataURL(file);
+    const grandes = files.filter((f) => f.size > LIMITE_UPLOAD_MB * 1024 * 1024);
+    setErroUpload(grandes.length ? `${grandes.map((f) => f.name).join(", ")}: maior que ${LIMITE_UPLOAD_MB} MB. Para arquivos grandes, suba no Drive/SharePoint e cole o link.` : "");
+    files.filter((f) => f.size <= LIMITE_UPLOAD_MB * 1024 * 1024).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => atualizarArquivos((a) => [...a, { id: uid(), nome: file.name, dataUrl: reader.result, tamanho: file.size, adicionadoEm: hojeISO(), por: state.usuario }]);
+      reader.readAsDataURL(file);
+    });
   };
 
   const termo = busca.trim().toLowerCase();
@@ -720,11 +781,28 @@ function AbaMateriais({ state, update, pastaAberta, setPastaAberta, busca }) {
             </div>
           </div>
 
+          {pasta.arquivos.some(ehImagem) && (
+            <div className="grid gap-3 mb-5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}>
+              {pasta.arquivos.filter(ehImagem).map((a) => (
+                <button key={a.id} onClick={() => setPreview(a)} className="rounded-xl overflow-hidden text-left hover:shadow-md transition-shadow" style={{ border: `1px solid ${S.linha}` }}>
+                  <img src={srcArquivo(a)} alt={a.nome} className="w-full aspect-square object-cover" style={{ background: S.fundo }} />
+                  <p className="text-xs font-semibold truncate px-2 py-1.5" style={{ color: S.tinta }}>{a.nome}</p>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex flex-col gap-2 mb-5">
             {pasta.arquivos.length === 0 && <p className="text-sm italic py-4 text-center rounded-xl" style={{ color: S.tintaSuave, background: S.fundo }}>Nenhum arquivo ainda. Adicione um link ou envie um arquivo abaixo.</p>}
             {pasta.arquivos.map((a) => (
               <div key={a.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ border: `1px solid ${S.linha}` }}>
-                <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: pasta.cor + "1A", color: pasta.cor }}>{a.dataUrl ? <FileText size={18} /> : <LinkIcon size={18} />}</span>
+                {ehImagem(a) ? (
+                  <button onClick={() => setPreview(a)} title="Ver imagem" className="w-14 h-14 rounded-lg overflow-hidden shrink-0" style={{ background: pasta.cor + "1A" }}>
+                    <img src={srcArquivo(a)} alt={a.nome} className="w-full h-full object-cover" />
+                  </button>
+                ) : (
+                  <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: pasta.cor + "1A", color: pasta.cor }}>{a.dataUrl ? <FileText size={18} /> : <LinkIcon size={18} />}</span>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: S.tinta }}>{a.nome}</p>
                   <p className="text-xs truncate" style={{ color: S.tintaSuave }}>{a.dataUrl ? `${(a.tamanho / 1024).toFixed(0)} KB` : a.link} · {fmtCurta(a.adicionadoEm)}{a.por ? ` · ${a.por}` : ""}</p>
@@ -743,13 +821,21 @@ function AbaMateriais({ state, update, pastaAberta, setPastaAberta, busca }) {
               <BotaoPrimario onClick={addLink}><LinkIcon size={15} /> Adicionar link</BotaoPrimario>
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-3">
-              <BotaoSecundario onClick={() => inputArquivo.current?.click()}><Upload size={15} /> Enviar arquivo (até {LIMITE_UPLOAD_MB} MB)</BotaoSecundario>
-              <input ref={inputArquivo} type="file" className="hidden" onChange={enviarArquivo} />
+              <BotaoSecundario onClick={() => inputArquivo.current?.click()}><Upload size={15} /> Enviar arquivo ou imagem (até {LIMITE_UPLOAD_MB} MB)</BotaoSecundario>
+              <input ref={inputArquivo} type="file" multiple className="hidden" onChange={enviarArquivo} />
               {erroUpload && <span className="text-xs" style={{ color: "#D32F2F" }}>{erroUpload}</span>}
             </div>
           </div>
         </Card>
         {modalPasta && <ModalPasta pasta={modalPasta} onSalvar={salvarPasta} onExcluir={excluirPasta} onFechar={() => setModalPasta(null)} />}
+        {preview && (
+          <Modal titulo={preview.nome} onFechar={() => setPreview(null)} largura={900}>
+            <img src={srcArquivo(preview)} alt={preview.nome} className="w-full max-h-[65vh] object-contain rounded-lg" style={{ background: S.fundo }} />
+            <div className="flex justify-end mt-4">
+              <a {...botaoDownloadProps(preview)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: S.laranja, color: "#fff" }}><Download size={15} /> Download</a>
+            </div>
+          </Modal>
+        )}
       </div>
     );
   }

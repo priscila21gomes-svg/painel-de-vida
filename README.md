@@ -34,7 +34,7 @@ Uma segunda página, separada do Painel da Vida, com tema Shopee (branco e laran
 
 - **Visão Geral:** calendário de eventos (semana / mês / lista), destaques do mês com download, atividades da semana e tipos de eventos.
 - **Calendário:** clique em um dia para criar um evento (tipo, horário, responsável, local).
-- **Materiais Regionais:** pastas por campanha com links (Drive, Canva, SharePoint...) ou arquivos de até 2 MB para download.
+- **Materiais Regionais:** pastas por campanha com links (Drive, Canva, SharePoint...) ou arquivos e imagens de até 2 MB para download (com galeria e pré-visualização). Cada pasta pode ter uma imagem de capa, que aparece também nos Destaques do mês.
 - **Demandas:** controle de demandas com responsável, prazo, prioridade e status, mais o cadastro da equipe.
 - **Próximos Passos:** checklist com responsável e prazo.
 - **Ideias e Sugestões:** mural com votos.
