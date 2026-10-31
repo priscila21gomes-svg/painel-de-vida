@@ -1116,7 +1116,7 @@ function Banner() {
         <p className="text-lg font-extrabold leading-tight" style={{ color: S.tinta }}>Eventos que engajam pessoas e constroem</p>
         <p className="text-2xl font-black leading-tight" style={{ color: S.laranja }}>grandes histórias!</p>
       </div>
-      <Mascote pose="megafone" size={118} className="absolute right-0 bottom-0" />
+      <Mascote size={122} className="absolute right-1 bottom-1" />
       <span className="absolute -right-6 -top-6 w-24 h-24 rounded-full" style={{ background: "rgba(238,77,45,0.08)" }} />
     </div>
   );
@@ -1158,7 +1158,7 @@ function Saudacao({ state }) {
     : `Hoje tem ${deHoje.length} atividades no calendário. Bora! 🚀`;
   return (
     <div className="rounded-2xl relative overflow-hidden flex items-center gap-3 pl-2 pr-5" style={{ background: `linear-gradient(90deg, ${S.laranjaClaro}, #fff)`, border: `1px solid ${S.laranjaBorda}` }}>
-      <Mascote size={84} className="shrink-0 self-end" />
+      <Mascote size={96} className="shrink-0 my-1" />
       <div className="py-3 min-w-0">
         <p className="text-lg font-extrabold" style={{ color: S.tinta }}>{oi}{primeiroNome ? `, ${primeiroNome}` : ""}! 👋</p>
         <p className="text-sm" style={{ color: S.tintaSuave }}>{fmtLonga(hojeISO()).replace(/^./, (c) => c.toUpperCase())} · {frase}</p>
@@ -1430,11 +1430,12 @@ export default function ComiteEventos() {
             </div>
           </div>
           <p className="hidden lg:block text-sm font-semibold text-white/95 pl-6 leading-snug" style={{ borderLeft: "1px solid rgba(255,255,255,0.4)" }}>Pessoas que conectam,<br />eventos que transformam!</p>
+          <Mascote size={64} className="hidden xl:block -my-2 drop-shadow" />
           <div className="flex items-center gap-3 flex-1 justify-end min-w-[260px]">
             <BuscaGlobal state={state} valor={busca} setValor={setBusca} irPara={irPara} />
             <Notificacoes state={state} abrirDemanda={(d) => { setAba("demandas"); abrirDemanda(d); }} abrirEvento={abrirEvento} />
             <button onClick={trocarUsuario} title="Trocar nome" className="hidden sm:flex items-center gap-2 rounded-full pl-1 pr-3 py-1" style={{ background: "#fff" }}>
-              <span className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ background: S.laranjaClaro }}><MascoteRosto size={30} /></span>
+              <span className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ background: S.laranjaClaro }}><MascoteRosto size={34} /></span>
               <span className="text-left leading-tight">
                 <span className="block text-sm font-bold max-w-[150px] truncate" style={{ color: S.tinta }}>{state.usuario || "Definir nome"}</span>
                 <span className="block text-[11px]" style={{ color: S.tintaSuave }}>Comitê de Eventos</span>

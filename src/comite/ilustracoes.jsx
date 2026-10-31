@@ -3,88 +3,17 @@
 
 const tinta = "#2B1B12";
 
-// ---------- mascote: cachorrinho laranja ----------
-function CabecaMascote({ x = 0, y = 0, s = 1, piscando = false }) {
-  return (
-    <g transform={`translate(${x} ${y}) scale(${s})`}>
-      {/* orelhas */}
-      <path d="M14 30 C4 8 18 -2 30 14 Z" fill="#E8551F" />
-      <path d="M17 26 C11 12 19 6 26 16 Z" fill="#FFB199" />
-      <path d="M86 30 C96 8 82 -2 70 14 Z" fill="#E8551F" />
-      <path d="M83 26 C89 12 81 6 74 16 Z" fill="#FFB199" />
-      {/* cabeça */}
-      <ellipse cx="50" cy="44" rx="40" ry="35" fill="#FF8A3D" />
-      <path d="M44 10 C46 2 54 2 56 10 C52 7 48 7 44 10 Z" fill="#FF8A3D" />
-      {/* focinho */}
-      <ellipse cx="50" cy="58" rx="23" ry="17" fill="#FFE6D1" />
-      {/* olhos */}
-      {piscando ? (
-        <path d="M28 41 Q35 35 42 41" stroke={tinta} strokeWidth="3.2" fill="none" strokeLinecap="round" />
-      ) : (
-        <g>
-          <ellipse cx="35" cy="40" rx="5.5" ry="6.5" fill={tinta} />
-          <circle cx="37" cy="37.5" r="2" fill="#fff" />
-        </g>
-      )}
-      <ellipse cx="65" cy="40" rx="5.5" ry="6.5" fill={tinta} />
-      <circle cx="67" cy="37.5" r="2" fill="#fff" />
-      {/* bochechas */}
-      <ellipse cx="22" cy="55" rx="7" ry="4.5" fill="#FF6F91" opacity="0.45" />
-      <ellipse cx="78" cy="55" rx="7" ry="4.5" fill="#FF6F91" opacity="0.45" />
-      {/* nariz e boca */}
-      <ellipse cx="50" cy="51" rx="6" ry="4.2" fill={tinta} />
-      <path d="M41 59 Q50 70 59 59" fill="#C2410C" />
-      <path d="M45 63 Q50 70 55 63 Q50 66 45 63 Z" fill="#FF6F91" />
-    </g>
-  );
-}
+// ---------- mascote oficial (imagens em /public) ----------
+const MASCOTE = "/mascote-shopee.webp";
+const MASCOTE_ROSTO = "/mascote-shopee-rosto.webp";
 
 export function MascoteRosto({ size = 40, className = "" }) {
-  return (
-    <svg viewBox="-2 -4 104 88" width={size} height={size} className={className} aria-hidden="true">
-      <CabecaMascote />
-    </svg>
-  );
+  return <img src={MASCOTE_ROSTO} alt="" width={size} height={size} className={className} style={{ width: size, height: size, objectFit: "cover" }} />;
 }
 
-// Corpo inteiro. pose: "megafone" | "acenando"
-export function Mascote({ pose = "acenando", size = 120, className = "" }) {
-  return (
-    <svg viewBox="0 14 160 148" width={size} height={size} className={className} aria-hidden="true">
-      {/* corpo */}
-      <ellipse cx="72" cy="128" rx="34" ry="28" fill="#FF8A3D" />
-      <ellipse cx="72" cy="134" rx="20" ry="17" fill="#FFE6D1" />
-      {/* camiseta laranja escuro com coração */}
-      <path d="M44 112 Q72 100 100 112 L102 128 Q72 120 42 128 Z" fill="#EE4D2D" />
-      <path d="M72 122 l-4 -4 a2.6 2.6 0 0 1 4 -3 a2.6 2.6 0 0 1 4 3 Z" fill="#fff" />
-      {/* pés */}
-      <ellipse cx="54" cy="154" rx="12" ry="6" fill="#E8551F" />
-      <ellipse cx="90" cy="154" rx="12" ry="6" fill="#E8551F" />
-      {/* braço esquerdo */}
-      <ellipse cx="42" cy="128" rx="8" ry="12" fill="#FF8A3D" transform="rotate(20 42 128)" />
-      {pose === "megafone" ? (
-        <g>
-          {/* braço levantado segurando megafone */}
-          <ellipse cx="102" cy="114" rx="8" ry="14" fill="#FF8A3D" transform="rotate(-50 102 114)" />
-          <g transform="translate(-4 18) rotate(-22 122 80)">
-            <rect x="104" y="76" width="12" height="16" rx="3" fill="#B91C1C" />
-            <path d="M114 74 L148 58 L148 110 L114 94 Z" fill="#EE4D2D" />
-            <path d="M126 69 L126 99" stroke="#fff" strokeWidth="4" />
-            <ellipse cx="148" cy="84" rx="6" ry="26" fill="#FF7337" />
-            <ellipse cx="148" cy="84" rx="3" ry="18" fill="#FFD6C8" />
-          </g>
-          {/* linhas de som */}
-          <path d="M146 46 l8 -8 M150 62 l9 -2 M136 38 l2 -10" stroke="#EE4D2D" strokeWidth="3.5" strokeLinecap="round" />
-        </g>
-      ) : (
-        <g>
-          <ellipse cx="104" cy="110" rx="8" ry="14" fill="#FF8A3D" transform="rotate(-35 104 110)" />
-          <path d="M116 92 q6 -6 10 0 M120 84 q8 -6 12 2" stroke="#EE4D2D" strokeWidth="3" fill="none" strokeLinecap="round" />
-        </g>
-      )}
-      <CabecaMascote x={22} y={22} s={1} piscando={pose === "acenando"} />
-    </svg>
-  );
+// pose mantida por compatibilidade; a arte oficial é sempre a mesma
+export function Mascote({ size = 120, className = "", style }) {
+  return <img src={MASCOTE} alt="Mascote" width={size} height={size} className={className} style={{ width: size, height: size, objectFit: "contain", ...style }} draggable={false} />;
 }
 
 // ---------- capas temáticas (120x90) ----------
@@ -242,12 +171,7 @@ function Presente() {
 }
 
 function MascoteCapa() {
-  return (
-    <g>
-      <Confete />
-      <CabecaMascote x={28} y={6} s={0.66} />
-    </g>
-  );
+  return <image href={MASCOTE} x="22" y="2" width="76" height="86" preserveAspectRatio="xMidYMid meet" />;
 }
 
 export const ILUSTRACOES = {
