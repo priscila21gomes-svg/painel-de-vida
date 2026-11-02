@@ -27,7 +27,7 @@
   .brilho { position: absolute; color: var(--amarelo); font-size: 14mm; line-height: 1; }
 
   /* topo */
-  .topo { display: grid; grid-template-columns: 1fr 78mm; gap: 6mm; align-items: center; position: relative; }
+  .topo { display: grid; grid-template-columns: 1fr 88mm; gap: 6mm; align-items: center; position: relative; }
   .selo {
     display: inline-flex; flex-direction: column; background: rgba(165,14,38,.4); border: 1mm solid rgba(255,255,255,.3);
     border-radius: 20mm; padding: 3mm 9mm; line-height: 1.02;
@@ -36,12 +36,12 @@
   .selo span { font-size: 5.2mm; font-weight: 600; text-transform: uppercase; }
   .titulo { margin: 5mm 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 3mm 4mm; }
   .t1 {
-    font-size: 22mm; font-weight: 700; color: var(--amarelo); line-height: 1;
+    font-size: 25mm; font-weight: 700; color: var(--amarelo); line-height: 1;
     -webkit-text-stroke: 1.6mm var(--vermelho); paint-order: stroke fill;
     text-shadow: 0 1.6mm 0 var(--sombra); transform: rotate(-2deg);
   }
   .t2 {
-    font-size: 20mm; font-weight: 700; color: var(--amarelo); background: var(--vermelho); line-height: 1;
+    font-size: 23mm; font-weight: 700; color: var(--amarelo); background: var(--vermelho); line-height: 1;
     padding: 2.5mm 7mm 4mm; border-radius: 7mm; box-shadow: 0 2mm 0 var(--sombra); transform: rotate(-3deg);
     text-shadow: 0 1mm 0 var(--sombra);
   }
@@ -49,7 +49,7 @@
   .mascote { width: 100%; filter: drop-shadow(0 3mm 4mm rgba(120,20,10,.35)); }
 
   /* faixa QR + passos */
-  .faixa { display: grid; grid-template-columns: 112mm 1fr; gap: 8mm; align-items: stretch; }
+  .faixa { display: grid; grid-template-columns: 118mm 1fr; gap: 8mm; align-items: stretch; }
   .qr {
     background: #fff; color: var(--texto); border-radius: 9mm; padding: 7mm 7mm 6mm; text-align: center; justify-content: center;
     box-shadow: 0 2.5mm 0 rgba(120,20,10,.3); display: flex; flex-direction: column; align-items: center; gap: 3mm;
@@ -58,7 +58,7 @@
     background: var(--vermelho); color: #fff; font-weight: 700; font-size: 6.4mm; padding: 1.8mm 6mm;
     border-radius: 10mm; text-transform: uppercase; letter-spacing: .3mm;
   }
-  .qr img { width: 84mm; height: 84mm; display: block; }
+  .qr img { width: 92mm; height: 92mm; display: block; }
   .qr-url { font-family: "Nunito", sans-serif; font-weight: 800; font-size: 4.6mm; color: var(--vermelho); word-break: break-all; }
 
   .passos { background: #fff; color: var(--texto); border-radius: 9mm; padding: 8mm 9mm; box-shadow: 0 2.5mm 0 rgba(120,20,10,.3);
@@ -78,18 +78,23 @@
   .cal-cabeca { display: flex; align-items: baseline; justify-content: space-between; }
   .cal-cabeca h2 { margin: 0; font-size: 11mm; }
   .cal-cabeca span { font-size: 6mm; font-weight: 600; }
-  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3.5mm; margin-top: 4mm; }
-  .dia { background: #fff; color: var(--texto); border-radius: 5mm; overflow: hidden; box-shadow: 0 1.6mm 0 rgba(120,20,10,.3); text-align: center;
-         display: flex; flex-direction: column; }
-  .dia-topo { background: var(--laranja); color: #fff; padding: 2mm 1mm 1.6mm; }
-  .dia-topo b { display: block; font-size: 6.6mm; line-height: 1; }
-  .dia-topo span { display: block; font-size: 3.4mm; font-weight: 600; margin-top: .8mm; }
-  .dia img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; display: block; background: #fff; }
-  .dia-nome { font-size: 3.9mm; font-weight: 700; color: var(--laranja); padding: 1.8mm 1.2mm 2.2mm; line-height: 1.1; min-height: 11mm;
-              display: grid; place-items: center; }
-  .dia.grande .dia-topo { background: var(--vermelho); }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3.5mm; margin-top: 6mm; }
+  .dia { background: #fff; color: var(--texto); border-radius: 6mm; box-shadow: 0 1.6mm 0 rgba(120,20,10,.3); text-align: center;
+         display: flex; flex-direction: column; position: relative; }
+  .dia-topo { background: var(--laranja); color: #fff; padding: 4mm 1mm 3.4mm; border-radius: 6mm 6mm 0 0; }
+  .dia-topo b { display: block; font-size: 8.4mm; line-height: 1; }
+  .dia-topo span { display: block; font-size: 4.2mm; font-weight: 600; margin-top: 1.2mm; }
+  .dia-corpo { flex: 1; padding: 5mm 2.4mm 6mm; display: flex; flex-direction: column; align-items: center; gap: 3mm; }
+  .dia-icone { width: 16mm; height: 16mm; border-radius: 50%; background: var(--vermelho); display: grid; place-items: center; font-size: 8mm; }
+  .dia-nome { font-size: 5mm; font-weight: 700; color: var(--laranja); line-height: 1.1; }
+  .dia-desc { font-family: "Nunito", sans-serif; font-weight: 700; font-size: 3.6mm; color: #6b4a40; line-height: 1.25; }
   .dia.grande { outline: 1.2mm solid var(--amarelo); }
-  .dia.grande .dia-nome { background: var(--amarelo); color: var(--vermelho); }
+  .dia.grande .dia-topo { background: var(--vermelho); padding-top: 6mm; }
+  .dia.grande .dia-corpo { background: var(--amarelo); border-radius: 0 0 6mm 6mm; }
+  .dia.grande .dia-nome { color: var(--vermelho); }
+  .dia.grande .dia-desc { color: var(--vinho); }
+  .fita { position: absolute; top: -3mm; left: 50%; transform: translateX(-50%); background: var(--amarelo); color: var(--vermelho);
+          font-size: 3mm; font-weight: 700; padding: .8mm 2.5mm; border-radius: 5mm; white-space: nowrap; text-transform: uppercase; }
 
   .rodape { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 6mm; }
   .hashtag { background: #fff; color: var(--vermelho); font-weight: 700; font-size: 9mm; padding: 2.5mm 9mm; border-radius: 20mm;
@@ -136,13 +141,13 @@
     <section>
       <div class="cal-cabeca"><h2>Calendário de desafios</h2><span>De 06/11 a 14/11</span></div>
       <div class="cal">
-        <div class="dia"><div class="dia-topo"><b>DIA 1</b><span>SEX 06/11</span></div><img src="molduras/dia-1.webp" alt="" /><div class="dia-nome">Laranja + Grito de Guerra</div></div>
-        <div class="dia"><div class="dia-topo"><b>DIA 2</b><span>SÁB 07/11</span></div><img src="molduras/dia-2.webp" alt="" /><div class="dia-nome">Cabelo Maluco</div></div>
-        <div class="dia"><div class="dia-topo"><b>DIA 3</b><span>DOM 08/11</span></div><img src="molduras/dia-3.webp" alt="" /><div class="dia-nome">Cor da Equipe</div></div>
-        <div class="dia"><div class="dia-topo"><b>DIA 4</b><span>SEG 09/11</span></div><img src="molduras/dia-4.webp" alt="" /><div class="dia-nome">Foto Mais Maluca</div></div>
-        <div class="dia"><div class="dia-topo"><b>DIA 5</b><span>TER 10/11</span></div><img src="molduras/dia-5.webp" alt="" /><div class="dia-nome">Dia do Gêmeo</div></div>
-        <div class="dia grande"><div class="dia-topo"><b>DIA 6</b><span>QUA 11/11</span></div><img src="molduras/dia-6.webp" alt="" /><div class="dia-nome">Fantasy Day</div></div>
-        <div class="dia"><div class="dia-topo"><b>DIA 7</b><span>SÁB 14/11</span></div><img src="molduras/dia-7.webp" alt="" /><div class="dia-nome">The Voice / Karaokê</div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 1</b><span>SEX 06/11</span></div><div class="dia-corpo"><span class="dia-icone">📣</span><div class="dia-nome">Laranja + Grito de Guerra</div><div class="dia-desc">Laranja, grito e Correio da Gratidão</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 2</b><span>SÁB 07/11</span></div><div class="dia-corpo"><span class="dia-icone">✨</span><div class="dia-nome">Cabelo Maluco</div><div class="dia-desc">Penteado divertido e criativo</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 3</b><span>DOM 08/11</span></div><div class="dia-corpo"><span class="dia-icone">🎨</span><div class="dia-nome">Cor da Equipe</div><div class="dia-desc">Todo mundo na cor do time</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 4</b><span>SEG 09/11</span></div><div class="dia-corpo"><span class="dia-icone">📸</span><div class="dia-nome">Foto Mais Maluca</div><div class="dia-desc">A foto coletiva mais divertida</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 5</b><span>TER 10/11</span></div><div class="dia-corpo"><span class="dia-icone">👯</span><div class="dia-nome">Dia do Gêmeo</div><div class="dia-desc">Duplas e grupos combinando</div></div></div>
+        <div class="dia grande"><span class="fita">O grande dia!</span><div class="dia-topo"><b>DIA 6</b><span>QUA 11/11</span></div><div class="dia-corpo"><span class="dia-icone">🚀</span><div class="dia-nome">Fantasy Day</div><div class="dia-desc">Fantasia e fotão do site</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 7</b><span>SÁB 14/11</span></div><div class="dia-corpo"><span class="dia-icone">🎤</span><div class="dia-nome">The Voice / Karaokê</div><div class="dia-desc">Karaokê e talentos do time</div></div></div>
       </div>
     </section>
 
