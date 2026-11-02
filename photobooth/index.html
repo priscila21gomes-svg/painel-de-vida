@@ -26,9 +26,28 @@
         <img class="mascote" src="img/mascote.webp" width="480" height="429" alt="Mascote da Shopee comemorando com sacolinhas" />
         <h1>Photobooth<br /><span>de desafios</span></h1>
         <p class="chamada">Escolha o dia, tire sua foto com a moldura e compartilhe!</p>
+        <button type="button" class="local-chip" id="local-chip" hidden>📍 <span id="local-txt"></span> <u>trocar</u></button>
       </header>
 
       <section id="grade" class="grade" aria-label="Dias do desafio"></section>
+
+      <section class="aderencia" aria-labelledby="ad-titulo">
+        <div class="ad-cabeca">
+          <h2 id="ad-titulo">Aderência pelo Brasil</h2>
+          <span class="ad-selo" id="ad-selo" hidden>Dados de demonstração</span>
+        </div>
+        <div class="ad-tiles">
+          <div class="ad-tile"><span class="ad-num" id="ad-total">–</span><span class="ad-rot">participações</span></div>
+          <div class="ad-tile"><span class="ad-num" id="ad-estados">–</span><span class="ad-rot">estados participando</span></div>
+          <div class="ad-tile"><span class="ad-num" id="ad-campeao">–</span><span class="ad-rot">dia que mais engajou</span></div>
+        </div>
+        <div class="ad-paineis">
+          <article class="ad-painel"><h3>Ranking por região</h3><ol class="ad-lista" id="ad-regioes"></ol></article>
+          <article class="ad-painel"><h3>Top 5 estados</h3><ol class="ad-lista" id="ad-top-estados"></ol></article>
+          <article class="ad-painel"><h3>Top 5 dias</h3><ol class="ad-lista" id="ad-top-dias"></ol></article>
+        </div>
+        <p class="ad-nota">Cada pessoa conta uma vez por dia, quando gera a foto. Só registramos o dia e o estado — nenhuma foto é enviada.</p>
+      </section>
 
       <footer class="rodape">
         <span class="hashtag" id="hashtag"></span>
@@ -94,7 +113,23 @@
       </div>
     </main>
 
+    <!-- MODAL: ESTADO / REGIÃO -->
+    <div class="modal" id="modal-local" hidden role="dialog" aria-modal="true" aria-labelledby="ml-titulo">
+      <div class="modal-caixa">
+        <h2 id="ml-titulo">De onde você está participando?</h2>
+        <p>Usamos só para medir a aderência por estado e região.</p>
+        <label for="ml-estado">Estado</label>
+        <select id="ml-estado"><option value="">Selecione o seu estado</option></select>
+        <p class="ml-regiao" id="ml-regiao">Região: —</p>
+        <div class="ml-botoes">
+          <button type="button" class="btn btn-transparente-escuro" id="ml-cancelar">Cancelar</button>
+          <button type="button" class="btn btn-amarelo" id="ml-ok" disabled>Continuar</button>
+        </div>
+      </div>
+    </div>
+
     <script src="config.js"></script>
+    <script src="aderencia.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

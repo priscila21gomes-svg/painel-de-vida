@@ -76,9 +76,98 @@
       b.querySelector(".card-status").textContent = s.texto;
       b.addEventListener("click", () => {
         if (!s.ok) return;
-        location.hash = `dia-${dia.dia}`;
+        comLocal(() => { location.hash = `dia-${dia.dia}`; });
       });
       grade.appendChild(b);
+    }
+    atualizarChipLocal();
+    montarAderencia();
+  }
+
+  // ---------------------------------------------------------------- estado / região
+  let aposLocal = null;
+  function atualizarChipLocal() {
+    const l = Aderencia.localAtual();
+    $("local-chip").hidden = !l;
+    if (l) $("local-txt").textContent = `${l.nome} · ${l.regiao}`;
+  }
+  function comLocal(fn) {
+    if (Aderencia.localAtual()) { fn(); return; }
+    abrirModalLocal(fn);
+  }
+  function abrirModalLocal(fn) {
+    aposLocal = fn || null;
+    const sel = $("ml-estado");
+    const l = Aderencia.localAtual();
+    sel.value = l ? l.uf : "";
+    mostrarRegiao();
+    $("modal-local").hidden = false;
+    sel.focus();
+  }
+  function mostrarRegiao() {
+    const e = Aderencia.porUF[$("ml-estado").value];
+    $("ml-regiao").textContent = e ? `Região: ${e.regiao}` : "Região: —";
+    $("ml-ok").disabled = !e;
+  }
+  function montarSeletorEstados() {
+    const sel = $("ml-estado");
+    for (const r of Aderencia.REGIOES) {
+      const g = document.createElement("optgroup");
+      g.label = r;
+      for (const e of Aderencia.ESTADOS.filter((x) => x.regiao === r).sort((a, b) => a.nome.localeCompare(b.nome))) {
+        const o = document.createElement("option");
+        o.value = e.uf; o.textContent = `${e.nome} (${e.uf})`;
+        g.appendChild(o);
+      }
+      sel.appendChild(g);
+    }
+    sel.addEventListener("change", mostrarRegiao);
+    $("ml-ok").addEventListener("click", () => {
+      Aderencia.salvarLocal(sel.value);
+      $("modal-local").hidden = true;
+      atualizarChipLocal();
+      const fn = aposLocal; aposLocal = null;
+      if (fn) fn();
+    });
+    $("ml-cancelar").addEventListener("click", () => {
+      $("modal-local").hidden = true;
+      aposLocal = null;
+      if (location.hash) location.hash = "";
+    });
+    $("local-chip").addEventListener("click", () => abrirModalLocal(null));
+  }
+
+  // ---------------------------------------------------------------- aderência
+  const fmt = new Intl.NumberFormat("pt-BR");
+  function lista(el, itens) {
+    el.innerHTML = "";
+    const max = Math.max(1, ...itens.map((i) => i.valor));
+    itens.forEach((i, idx) => {
+      const li = document.createElement("li");
+      li.title = `${i.rotulo}: ${fmt.format(i.valor)} participações`;
+      li.innerHTML = `<span class="ad-pos"></span><span class="ad-info"><span class="ad-linha"><span class="ad-nome"></span><span class="ad-valor"></span></span><span class="ad-sub"></span><span class="ad-trilho"><span class="ad-barra"></span></span></span>`;
+      li.querySelector(".ad-pos").textContent = `${idx + 1}º`;
+      li.querySelector(".ad-nome").textContent = i.rotulo;
+      li.querySelector(".ad-valor").textContent = fmt.format(i.valor);
+      const sub = li.querySelector(".ad-sub");
+      if (i.sub) sub.textContent = i.sub; else sub.remove();
+      li.querySelector(".ad-barra").style.width = `${(i.valor / max) * 100}%`;
+      el.appendChild(li);
+    });
+  }
+  async function montarAderencia() {
+    try {
+      const { linhas, ficticio } = await Aderencia.carregar();
+      const r = Aderencia.resumir(linhas, CFG.dias);
+      $("ad-selo").hidden = !ficticio;
+      $("ad-total").textContent = fmt.format(r.total);
+      $("ad-estados").textContent = `${r.estadosAtivos}/27`;
+      $("ad-campeao").textContent = r.dias[0] ? r.dias[0].rotulo : "–";
+      lista($("ad-regioes"), r.regioes);
+      lista($("ad-top-estados"), r.estados);
+      lista($("ad-top-dias"), r.dias);
+    } catch (e) {
+      $("ad-total").textContent = "–";
     }
   }
 
@@ -360,6 +449,8 @@
     $("compartilhar").hidden = !podeCompartilhar;
     baixar.className = "btn " + (podeCompartilhar ? "btn-claro" : "btn-amarelo");
     $("dica-salvar").hidden = !isIOS;
+    const local = Aderencia.localAtual();
+    if (local) Aderencia.registrar(st.dia.dia, local.uf);
     mostrar("tela-resultado");
   }
 
@@ -443,7 +534,10 @@
   // ---------------------------------------------------------------- rotas
   function rota() {
     const m = location.hash.match(/^#dia-(\d+)$/);
-    if (m) { abrirDia(Number(m[1])); return; }
+    if (m) {
+      if (!Aderencia.localAtual()) { montarInicio(); mostrar("tela-inicio"); abrirModalLocal(rota); return; }
+      abrirDia(Number(m[1])); return;
+    }
     sairCamera();
     st.dia = null;
     montarInicio();
@@ -489,6 +583,7 @@
       else if (!$("tela-camera").hidden && !st.still && st.moldura) ligarCamera();
     });
     configurarArraste();
+    montarSeletorEstados();
     window.addEventListener("hashchange", rota);
     rota();
   }

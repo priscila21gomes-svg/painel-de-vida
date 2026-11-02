@@ -22,6 +22,15 @@ window.PHOTOBOOTH_CONFIG = {
   // Para testar todos antes da hora, abra o site com ?todos=1 no final.
   bloquearDiasFuturos: false,
 
+  // Aderência por estado/região (nenhuma foto é enviada, só "dia + estado").
+  //   fonte: "ficticio" → números de demonstração
+  //   fonte: "supabase" → dados reais (rode supabase/aderencia.sql e preencha url/chave)
+  aderencia: {
+    fonte: "ficticio",
+    supabaseUrl: "",
+    supabaseAnonKey: "",
+  },
+
   dias: [
     {
       dia: 1, data: "2026-11-06", icone: "📣",

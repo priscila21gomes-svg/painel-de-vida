@@ -187,3 +187,69 @@ button, input, a { font: inherit; }
 @media (min-width: 900px) {
   .grade { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------- LOCAL (estado/região) ---------- */
+.local-chip {
+  margin-top: 4px; border: 0; cursor: pointer; border-radius: 999px; padding: 7px 14px;
+  background: rgba(120, 20, 10, .28); color: #fff; font-weight: 600; font-size: 14px;
+}
+.local-chip u { opacity: .85; margin-left: 4px; }
+
+.modal {
+  position: fixed; inset: 0; z-index: 50; background: rgba(60, 10, 5, .55);
+  display: flex; align-items: flex-end; justify-content: center; padding: 16px;
+}
+@media (min-width: 600px) { .modal { align-items: center; } }
+.modal-caixa {
+  width: 100%; max-width: 420px; background: #fff; color: var(--texto);
+  border-radius: 24px; padding: 22px 20px 18px; box-shadow: 0 20px 50px rgba(0,0,0,.3);
+}
+.modal-caixa h2 { margin: 0 0 4px; color: var(--laranja); font-size: 22px; line-height: 1.15; }
+.modal-caixa p { margin: 0 0 14px; font-size: 14px; color: #6b4a40; }
+.modal-caixa label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.modal-caixa select {
+  width: 100%; font: inherit; font-size: 16px; padding: 12px 14px; border-radius: 14px;
+  border: 2px solid #f3c9bd; background: #fff8f5; color: var(--texto);
+}
+.modal-caixa select:focus { outline: 3px solid var(--amarelo); border-color: var(--laranja); }
+.ml-regiao { margin: 10px 0 16px !important; font-weight: 600; color: var(--vermelho) !important; }
+.ml-botoes { display: flex; gap: 10px; }
+.ml-botoes .btn { flex: 1; padding: 12px 16px; font-size: 16px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-transparente-escuro { background: transparent; color: #6b4a40; border: 2px solid #f0d6ce; }
+
+/* ---------- ADERÊNCIA ---------- */
+.aderencia { display: flex; flex-direction: column; gap: 14px; }
+.ad-cabeca { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ad-cabeca h2 { margin: 0; font-size: 24px; }
+.ad-selo {
+  background: var(--amarelo); color: var(--vinho); font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .3px;
+}
+.ad-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ad-tile {
+  background: #fff; color: var(--texto); border-radius: 18px; padding: 12px 10px; text-align: center;
+  display: flex; flex-direction: column; gap: 2px; box-shadow: 0 4px 0 rgba(120, 20, 10, .2);
+}
+.ad-num { font-size: clamp(20px, 5.5vw, 30px); font-weight: 700; line-height: 1.1; color: var(--texto); }
+.ad-rot { font-size: 12px; color: #6b4a40; line-height: 1.2; }
+.ad-paineis { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .ad-paineis { grid-template-columns: repeat(3, 1fr); } }
+.ad-painel {
+  background: #fff; color: var(--texto); border-radius: var(--raio); padding: 16px 16px 10px;
+  box-shadow: 0 6px 0 rgba(120, 20, 10, .2);
+}
+.ad-painel h3 { margin: 0 0 10px; font-size: 17px; color: var(--laranja); }
+.ad-lista { list-style: none; margin: 0; padding: 0; }
+.ad-lista li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-top: 1px solid #f6e3dd; }
+.ad-lista li:first-child { border-top: 0; }
+.ad-pos { flex: none; width: 28px; font-weight: 700; color: #9a7a70; font-size: 14px; padding-top: 1px; }
+.ad-lista li:first-child .ad-pos { color: var(--texto); }
+.ad-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ad-linha { display: flex; justify-content: space-between; gap: 8px; }
+.ad-nome { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-valor { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+.ad-sub { font-size: 12px; color: #9a7a70; }
+.ad-trilho { display: block; height: 8px; border-radius: 4px; background: #fde7e1; overflow: hidden; }
+.ad-barra { display: block; height: 100%; border-radius: 4px; background: var(--vermelho); transition: width .6s ease; }
+.ad-nota { margin: 0; font-size: 13px; text-align: center; opacity: .95; }
