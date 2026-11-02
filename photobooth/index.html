@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#EE4D2D" />
+    <title>Photobooth Peak Season</title>
+    <meta name="description" content="Tire sua foto com a moldura do dia e compartilhe com #PeakSeasonSPX" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="inapp" class="inapp" hidden>
+      Para usar a câmera, abra este link no navegador (Safari ou Chrome): toque em <b>⋯</b> e escolha <b>“Abrir no navegador”</b>.
+    </div>
+
+    <!-- TELA 1: CALENDÁRIO -->
+    <main id="tela-inicio" class="tela">
+      <header class="topo">
+        <div class="selo">
+          <span class="selo-titulo" id="campanha"></span>
+          <span class="selo-sub" id="subtitulo"></span>
+        </div>
+        <h1>Photobooth<br /><span>de desafios</span></h1>
+        <p class="chamada">Escolha o dia, tire sua foto com a moldura e compartilhe!</p>
+      </header>
+
+      <section id="grade" class="grade" aria-label="Dias do desafio"></section>
+
+      <footer class="rodape">
+        <span class="hashtag" id="hashtag"></span>
+        <p>🔒 Suas fotos não são salvas em nenhum servidor — tudo acontece no seu celular.</p>
+      </footer>
+    </main>
+
+    <!-- TELA 2: CÂMERA -->
+    <main id="tela-camera" class="tela" hidden>
+      <div class="barra">
+        <button class="btn-icone" id="voltar" aria-label="Voltar">←</button>
+        <span id="titulo-dia" class="barra-titulo"></span>
+        <button class="btn-icone" id="trocar-camera" aria-label="Trocar câmera">⟲</button>
+      </div>
+
+      <div class="palco" id="palco">
+        <canvas id="preview" width="540" height="960"></canvas>
+        <div id="contagem" class="contagem" hidden></div>
+        <div id="flash" class="flash"></div>
+        <div id="aviso-camera" class="aviso-camera" hidden>
+          <p id="aviso-texto">Não foi possível abrir a câmera.</p>
+          <button class="btn btn-claro" id="tentar-camera">Tentar de novo</button>
+        </div>
+        <div id="dica-ajuste" class="dica-ajuste" hidden>Arraste para ajustar · use o controle para dar zoom</div>
+      </div>
+
+      <div class="controles">
+        <div class="linha-zoom" id="linha-zoom" hidden>
+          <span>−</span><input type="range" id="zoom" min="1" max="3" step="0.01" value="1" aria-label="Zoom" /><span>+</span>
+        </div>
+        <div class="linha-botoes">
+          <label class="btn-lateral" title="Enviar da galeria">
+            <input type="file" id="galeria" accept="image/*" hidden />
+            🖼️<small>Galeria</small>
+          </label>
+          <button class="disparo" id="disparar" aria-label="Tirar foto"><span></span></button>
+          <button class="btn-lateral" id="timer" title="Temporizador">⏱️<small id="timer-txt">3s</small></button>
+        </div>
+        <button class="btn btn-amarelo" id="usar-foto" hidden>Usar esta foto</button>
+      </div>
+    </main>
+
+    <!-- TELA 3: RESULTADO -->
+    <main id="tela-resultado" class="tela" hidden>
+      <div class="barra">
+        <button class="btn-icone" id="refazer-topo" aria-label="Voltar">←</button>
+        <span class="barra-titulo">Ficou demais! 🎉</span>
+        <span class="btn-icone-vazio"></span>
+      </div>
+      <div class="resultado">
+        <img id="foto-final" alt="Sua foto com a moldura" />
+      </div>
+      <div class="acoes">
+        <button class="btn btn-amarelo" id="compartilhar">📲 Compartilhar</button>
+        <a class="btn btn-claro" id="baixar" download>⬇️ Salvar no celular</a>
+        <button class="btn btn-transparente" id="refazer">📷 Tirar outra</button>
+        <p class="dica" id="dica-salvar">No iPhone, se o download não abrir, toque e segure na foto e escolha “Salvar na Fotos”.</p>
+        <p class="dica">Poste com <b id="hashtag-2"></b> 🧡</p>
+      </div>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
