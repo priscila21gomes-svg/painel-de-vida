@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920" />
+<title>Gestão Visual TV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --laranja: #ee4d2d; --vermelho: #c8102e; --vinho: #a50e26; --amarelo: #ffc72c;
+    --texto: #3a1a12; --sombra: #8e0a1f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #222; }
+  body { font-family: "Fredoka", system-ui, sans-serif; color: #fff; }
+
+  .tela {
+    width: 1920px; height: 1080px; position: relative; overflow: hidden; margin: 0 auto;
+    background: linear-gradient(150deg, #ff9a52 0%, #ff7a3d 22%, #f45b32 52%, #ee4d2d 74%, #d6361c 100%);
+    padding: 40px 64px 34px; display: grid; grid-template-rows: auto 1fr auto; gap: 26px;
+  }
+  .cadeado { position: absolute; right: -90px; top: -70px; width: 460px; opacity: .14; }
+  .brilho { position: absolute; color: var(--amarelo); line-height: 1; }
+
+  /* faixa principal: título | QR | passos */
+  .principal { display: grid; grid-template-columns: 1fr 470px 560px; gap: 40px; align-items: stretch; position: relative; }
+
+  .marca { display: flex; flex-direction: column; justify-content: center; position: relative; }
+  .selo {
+    align-self: flex-start; display: inline-flex; flex-direction: column; background: rgba(165,14,38,.4);
+    border: 4px solid rgba(255,255,255,.3); border-radius: 80px; padding: 10px 32px; line-height: 1.02;
+  }
+  .selo b { font-size: 46px; text-transform: uppercase; letter-spacing: 1px; }
+  .selo span { font-size: 20px; font-weight: 600; text-transform: uppercase; }
+  .titulo { margin: 34px 0 0; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+  .t1 {
+    font-size: 104px; font-weight: 700; color: var(--amarelo); line-height: .95;
+    -webkit-text-stroke: 7px var(--vermelho); paint-order: stroke fill; text-shadow: 0 7px 0 var(--sombra); transform: rotate(-2deg);
+  }
+  .t2 {
+    font-size: 92px; font-weight: 700; color: var(--amarelo); background: var(--vermelho); line-height: 1;
+    padding: 10px 30px 16px; border-radius: 28px; box-shadow: 0 9px 0 var(--sombra); transform: rotate(-3deg); text-shadow: 0 4px 0 var(--sombra);
+  }
+  .sub { margin: 28px 0 0; font-size: 31px; font-weight: 600; line-height: 1.2; max-width: 620px; }
+  .mascote { position: absolute; right: 0; top: -14px; width: 230px; filter: drop-shadow(0 12px 16px rgba(120,20,10,.35)); }
+
+  .cartao { background: #fff; color: var(--texto); border-radius: 36px; box-shadow: 0 10px 0 rgba(120,20,10,.3); }
+  .qr { padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; }
+  .qr-etiqueta { background: var(--vermelho); color: #fff; font-weight: 700; font-size: 28px; padding: 8px 28px; border-radius: 40px; text-transform: uppercase; letter-spacing: 1px; }
+  .qr img { width: 370px; height: 370px; display: block; }
+  .qr-url { font-family: "Nunito", sans-serif; font-weight: 800; font-size: 21px; color: var(--vermelho); }
+
+  .passos { padding: 34px 36px; display: flex; flex-direction: column; gap: 20px; }
+  .passos h2 { margin: 0; color: var(--laranja); font-size: 46px; line-height: 1; }
+  .passo { display: grid; grid-template-columns: 66px 1fr; gap: 20px; align-items: center; }
+  .passo .num { width: 66px; height: 66px; border-radius: 50%; background: var(--vermelho); color: var(--amarelo);
+                display: grid; place-items: center; font-size: 38px; font-weight: 700; box-shadow: 0 5px 0 var(--sombra); }
+  .passo b { display: block; font-size: 30px; line-height: 1.1; }
+  .passo div span { display: block; font-family: "Nunito", sans-serif; font-weight: 700; font-size: 19px; color: #6b4a40; margin-top: 4px; line-height: 1.25; }
+  .privacidade { margin-top: auto; background: #fff4ef; border-radius: 18px; padding: 12px 18px; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 18px; color: var(--vinho); }
+
+  /* calendário */
+  .calendario { display: grid; grid-template-columns: 250px 1fr; gap: 28px; align-items: stretch; }
+  .cal-titulo { display: flex; flex-direction: column; justify-content: center; }
+  .cal-titulo h2 { margin: 0; font-size: 46px; line-height: 1.02; }
+  .cal-titulo span { margin-top: 10px; font-size: 24px; font-weight: 600; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 16px; }
+  .dia { background: #fff; color: var(--texto); border-radius: 24px; box-shadow: 0 6px 0 rgba(120,20,10,.3); text-align: center; position: relative;
+         display: flex; flex-direction: column; }
+  .dia-topo { background: var(--laranja); color: #fff; padding: 14px 6px 12px; border-radius: 24px 24px 0 0; }
+  .dia-topo b { display: block; font-size: 34px; line-height: 1; }
+  .dia-topo span { display: block; font-size: 17px; font-weight: 600; margin-top: 4px; }
+  .dia-corpo { flex: 1; padding: 14px 10px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .dia-icone { width: 58px; height: 58px; border-radius: 50%; background: var(--vermelho); display: grid; place-items: center; font-size: 30px; }
+  .dia-nome { font-size: 21px; font-weight: 700; color: var(--laranja); line-height: 1.1; }
+  .dia-desc { font-family: "Nunito", sans-serif; font-weight: 700; font-size: 15px; color: #6b4a40; line-height: 1.25; }
+  .dia.grande { outline: 5px solid var(--amarelo); }
+  .dia.grande .dia-topo { background: var(--vermelho); }
+  .dia.grande .dia-corpo { background: var(--amarelo); border-radius: 0 0 24px 24px; }
+  .dia.grande .dia-nome { color: var(--vermelho); }
+  .dia.grande .dia-desc { color: var(--vinho); }
+  .fita { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--amarelo); color: var(--vermelho);
+          font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; }
+
+  .rodape { display: flex; align-items: center; justify-content: space-between; }
+  .hashtag { background: #fff; color: var(--vermelho); font-weight: 700; font-size: 36px; padding: 10px 36px; border-radius: 60px; box-shadow: 0 6px 0 rgba(120,20,10,.3); }
+  .bora { font-size: 42px; font-weight: 700; line-height: 1; display: flex; align-items: baseline; gap: 18px; }
+  .bora em { font-style: normal; color: var(--amarelo); font-size: 34px; }
+</style>
+</head>
+<body>
+  <main class="tela">
+    <svg class="cadeado" viewBox="0 0 100 110" aria-hidden="true"><path d="M28 45V30a22 22 0 0 1 44 0v15" fill="none" stroke="#a50e26" stroke-width="10"/><rect x="10" y="42" width="80" height="64" rx="12" fill="#a50e26"/></svg>
+    <span class="brilho" style="left:20px;top:410px;font-size:44px">✦</span>
+    <span class="brilho" style="left:760px;top:60px;font-size:36px">✦</span>
+    <span class="brilho" style="right:24px;top:640px;font-size:34px">✦</span>
+
+    <section class="principal">
+      <div class="marca">
+        <div class="selo"><b>Peak Season</b><span>7 dias, 7 desafios</span></div>
+        <h1 class="titulo"><span class="t1">PHOTOBOOTH</span><span class="t2">DE DESAFIOS!</span></h1>
+        <p class="sub">Tire sua foto com a moldura do dia e mostre a energia do seu time! 📸</p>
+        <img class="mascote" src="img/mascote.webp" alt="" />
+      </div>
+
+      <div class="cartao qr">
+        <span class="qr-etiqueta">Aponte a câmera</span>
+        <img src="img/qrcode.svg" alt="QR code para o photobooth" />
+        <span class="qr-url">photobooth-peak-season.vercel.app</span>
+      </div>
+
+      <div class="cartao passos">
+        <h2>Como participar</h2>
+        <div class="passo"><span class="num">1</span><div><b>Escaneie o QR code</b><span>Use a câmera do celular e abra o link.</span></div></div>
+        <div class="passo"><span class="num">2</span><div><b>Escolha o dia e o seu estado</b><span>Sua participação entra na aderência da sua região.</span></div></div>
+        <div class="passo"><span class="num">3</span><div><b>Tire a foto com a moldura</b><span>Câmera frontal ou traseira, com temporizador.</span></div></div>
+        <div class="passo"><span class="num">4</span><div><b>Compartilhe!</b><span>Poste com #PeakSeasonSPX ou salve no celular.</span></div></div>
+        <div class="privacidade">🔒 Nenhuma foto é salva no site — ela fica só no seu celular.</div>
+      </div>
+    </section>
+
+    <section class="calendario">
+      <div class="cal-titulo"><h2>Calendário de desafios</h2><span>De 06/11 a 14/11</span></div>
+      <div class="cal">
+        <div class="dia"><div class="dia-topo"><b>DIA 1</b><span>SEX 06/11</span></div><div class="dia-corpo"><span class="dia-icone">📣</span><div class="dia-nome">Laranja + Grito de Guerra</div><div class="dia-desc">Laranja, grito e Correio da Gratidão</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 2</b><span>SÁB 07/11</span></div><div class="dia-corpo"><span class="dia-icone">✨</span><div class="dia-nome">Cabelo Maluco</div><div class="dia-desc">Penteado divertido e criativo</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 3</b><span>DOM 08/11</span></div><div class="dia-corpo"><span class="dia-icone">🎨</span><div class="dia-nome">Cor da Equipe</div><div class="dia-desc">Todo mundo na cor do time</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 4</b><span>SEG 09/11</span></div><div class="dia-corpo"><span class="dia-icone">📸</span><div class="dia-nome">Foto Mais Maluca</div><div class="dia-desc">A foto coletiva mais divertida</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 5</b><span>TER 10/11</span></div><div class="dia-corpo"><span class="dia-icone">👯</span><div class="dia-nome">Dia do Gêmeo</div><div class="dia-desc">Duplas e grupos combinando</div></div></div>
+        <div class="dia grande"><span class="fita">O grande dia!</span><div class="dia-topo"><b>DIA 6</b><span>QUA 11/11</span></div><div class="dia-corpo"><span class="dia-icone">🚀</span><div class="dia-nome">Fantasy Day</div><div class="dia-desc">Fantasia e fotão do site</div></div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 7</b><span>SÁB 14/11</span></div><div class="dia-corpo"><span class="dia-icone">🎤</span><div class="dia-nome">The Voice / Karaokê</div><div class="dia-desc">Karaokê e talentos do time</div></div></div>
+      </div>
+    </section>
+
+    <footer class="rodape">
+      <span class="hashtag">#PeakSeasonSPX</span>
+      <div class="bora">Bora participar? <em>Juntos no maior desafio do ano!</em></div>
+    </footer>
+  </main>
+</body>
+</html>
