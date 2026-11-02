@@ -27,19 +27,19 @@ window.PHOTOBOOTH_CONFIG = {
       dia: 1, data: "2026-11-06", icone: "📣",
       nome: "Laranja + Grito de Guerra",
       descricao: "Laranja, grito e Correio da Gratidão",
-      moldura: "molduras/dia-1.webp", // provisória — trocar pela arte oficial,
+      moldura: "molduras/dia-1.webp", // provisória — trocar pela arte oficial
     },
     {
       dia: 2, data: "2026-11-07", icone: "✨",
       nome: "Cabelo Maluco",
       descricao: "Penteado divertido e criativo",
-      moldura: "molduras/dia-2.webp", // provisória — trocar pela arte oficial,
+      moldura: "molduras/dia-2.webp", // provisória — trocar pela arte oficial
     },
     {
       dia: 3, data: "2026-11-08", icone: "🎨",
       nome: "Cor da Equipe",
       descricao: "Todo mundo na cor do time",
-      moldura: "molduras/dia-3.webp", // provisória — trocar pela arte oficial,
+      moldura: "molduras/dia-3.webp", // provisória — trocar pela arte oficial
     },
     {
       dia: 4, data: "2026-11-09", icone: "📸",
