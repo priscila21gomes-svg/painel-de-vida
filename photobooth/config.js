@@ -20,7 +20,7 @@ window.PHOTOBOOTH_CONFIG = {
 
   // true = dias futuros ficam bloqueados até a data chegar.
   // Para testar todos antes da hora, abra o site com ?todos=1 no final.
-  bloquearDiasFuturos: true,
+  bloquearDiasFuturos: false,
 
   dias: [
     {
