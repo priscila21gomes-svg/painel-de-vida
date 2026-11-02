@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gestão Visual Photobooth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  @page { size: A3 portrait; margin: 0; }
+  :root {
+    --laranja: #ee4d2d; --vermelho: #c8102e; --vinho: #a50e26; --amarelo: #ffc72c;
+    --texto: #3a1a12; --sombra: #8e0a1f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #ddd; }
+  body { font-family: "Fredoka", system-ui, sans-serif; color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .folha {
+    width: 297mm; height: 420mm; margin: 0 auto; position: relative; overflow: hidden;
+    background: linear-gradient(165deg, #ff9a52 0%, #ff7a3d 22%, #f45b32 50%, #ee4d2d 72%, #d6361c 100%);
+    padding: 13mm 16mm 11mm; display: flex; flex-direction: column; gap: 7mm;
+  }
+  /* cadeado decorativo, como nas molduras */
+  .cadeado { position: absolute; right: -30mm; top: -18mm; width: 120mm; opacity: .16; }
+  .brilho { position: absolute; color: var(--amarelo); font-size: 14mm; line-height: 1; }
+
+  /* topo */
+  .topo { display: grid; grid-template-columns: 1fr 78mm; gap: 6mm; align-items: center; position: relative; }
+  .selo {
+    display: inline-flex; flex-direction: column; background: rgba(165,14,38,.4); border: 1mm solid rgba(255,255,255,.3);
+    border-radius: 20mm; padding: 3mm 9mm; line-height: 1.02;
+  }
+  .selo b { font-size: 12mm; text-transform: uppercase; letter-spacing: .3mm; }
+  .selo span { font-size: 5.2mm; font-weight: 600; text-transform: uppercase; }
+  .titulo { margin: 5mm 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 3mm 4mm; }
+  .t1 {
+    font-size: 22mm; font-weight: 700; color: var(--amarelo); line-height: 1;
+    -webkit-text-stroke: 1.6mm var(--vermelho); paint-order: stroke fill;
+    text-shadow: 0 1.6mm 0 var(--sombra); transform: rotate(-2deg);
+  }
+  .t2 {
+    font-size: 20mm; font-weight: 700; color: var(--amarelo); background: var(--vermelho); line-height: 1;
+    padding: 2.5mm 7mm 4mm; border-radius: 7mm; box-shadow: 0 2mm 0 var(--sombra); transform: rotate(-3deg);
+    text-shadow: 0 1mm 0 var(--sombra);
+  }
+  .sub { margin: 5mm 0 0; font-size: 7mm; font-weight: 600; line-height: 1.2; max-width: 150mm; }
+  .mascote { width: 100%; filter: drop-shadow(0 3mm 4mm rgba(120,20,10,.35)); }
+
+  /* faixa QR + passos */
+  .faixa { display: grid; grid-template-columns: 112mm 1fr; gap: 8mm; align-items: stretch; }
+  .qr {
+    background: #fff; color: var(--texto); border-radius: 9mm; padding: 7mm 7mm 6mm; text-align: center; justify-content: center;
+    box-shadow: 0 2.5mm 0 rgba(120,20,10,.3); display: flex; flex-direction: column; align-items: center; gap: 3mm;
+  }
+  .qr-etiqueta {
+    background: var(--vermelho); color: #fff; font-weight: 700; font-size: 6.4mm; padding: 1.8mm 6mm;
+    border-radius: 10mm; text-transform: uppercase; letter-spacing: .3mm;
+  }
+  .qr img { width: 84mm; height: 84mm; display: block; }
+  .qr-url { font-family: "Nunito", sans-serif; font-weight: 800; font-size: 4.6mm; color: var(--vermelho); word-break: break-all; }
+
+  .passos { background: #fff; color: var(--texto); border-radius: 9mm; padding: 8mm 9mm; box-shadow: 0 2.5mm 0 rgba(120,20,10,.3);
+            display: flex; flex-direction: column; gap: 4.5mm; }
+  .passos h2 { margin: 0; color: var(--laranja); font-size: 11mm; line-height: 1; }
+  .passo { display: grid; grid-template-columns: 17mm 1fr; gap: 5mm; align-items: center; }
+  .passo .num {
+    width: 17mm; height: 17mm; border-radius: 50%; background: var(--vermelho); color: var(--amarelo);
+    display: grid; place-items: center; font-size: 10mm; font-weight: 700; box-shadow: 0 1.2mm 0 var(--sombra);
+  }
+  .passo b { display: block; font-size: 7.4mm; line-height: 1.1; color: var(--texto); }
+  .passo div span { display: block; font-family: "Nunito", sans-serif; font-weight: 700; font-size: 4.8mm; color: #6b4a40; margin-top: 1mm; line-height: 1.25; }
+  .privacidade { margin-top: auto; background: #fff4ef; border-radius: 5mm; padding: 3.5mm 5mm; font-family: "Nunito", sans-serif;
+                 font-weight: 800; font-size: 4.4mm; color: var(--vinho); }
+
+  /* calendário */
+  .cal-cabeca { display: flex; align-items: baseline; justify-content: space-between; }
+  .cal-cabeca h2 { margin: 0; font-size: 11mm; }
+  .cal-cabeca span { font-size: 6mm; font-weight: 600; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3.5mm; margin-top: 4mm; }
+  .dia { background: #fff; color: var(--texto); border-radius: 5mm; overflow: hidden; box-shadow: 0 1.6mm 0 rgba(120,20,10,.3); text-align: center;
+         display: flex; flex-direction: column; }
+  .dia-topo { background: var(--laranja); color: #fff; padding: 2mm 1mm 1.6mm; }
+  .dia-topo b { display: block; font-size: 6.6mm; line-height: 1; }
+  .dia-topo span { display: block; font-size: 3.4mm; font-weight: 600; margin-top: .8mm; }
+  .dia img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; display: block; background: #fff; }
+  .dia-nome { font-size: 3.9mm; font-weight: 700; color: var(--laranja); padding: 1.8mm 1.2mm 2.2mm; line-height: 1.1; min-height: 11mm;
+              display: grid; place-items: center; }
+  .dia.grande .dia-topo { background: var(--vermelho); }
+  .dia.grande { outline: 1.2mm solid var(--amarelo); }
+  .dia.grande .dia-nome { background: var(--amarelo); color: var(--vermelho); }
+
+  .rodape { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 6mm; }
+  .hashtag { background: #fff; color: var(--vermelho); font-weight: 700; font-size: 9mm; padding: 2.5mm 9mm; border-radius: 20mm;
+             box-shadow: 0 1.6mm 0 rgba(120,20,10,.3); }
+  .bora { font-size: 11mm; font-weight: 700; text-align: right; line-height: 1; }
+  .bora em { font-style: normal; color: var(--amarelo); display: block; font-size: 9mm; }
+
+  @media screen { body { padding: 10mm 0; } .folha { box-shadow: 0 6mm 20mm rgba(0,0,0,.25); } }
+  @media print { html, body { background: none; } }
+</style>
+</head>
+<body>
+  <main class="folha">
+    <svg class="cadeado" viewBox="0 0 100 110" aria-hidden="true"><path d="M28 45V30a22 22 0 0 1 44 0v15" fill="none" stroke="#a50e26" stroke-width="10"/><rect x="10" y="42" width="80" height="64" rx="12" fill="#a50e26"/></svg>
+    <span class="brilho" style="left:4mm;top:96mm;font-size:10mm">✦</span>
+    <span class="brilho" style="right:10mm;top:116mm;font-size:10mm">✦</span>
+    <span class="brilho" style="left:150mm;top:392mm;font-size:9mm">✦</span>
+
+    <section class="topo">
+      <div>
+        <div class="selo"><b>Peak Season</b><span>7 dias, 7 desafios</span></div>
+        <h1 class="titulo"><span class="t1">PHOTOBOOTH</span><span class="t2">DE DESAFIOS!</span></h1>
+        <p class="sub">Tire sua foto com a moldura do dia e mostre a energia do seu time! 📸</p>
+      </div>
+      <img class="mascote" src="img/mascote.webp" alt="" />
+    </section>
+
+    <section class="faixa">
+      <div class="qr">
+        <span class="qr-etiqueta">Aponte a câmera</span>
+        <img src="img/qrcode.svg" alt="QR code para o photobooth" />
+        <span class="qr-url">photobooth-peak-season.vercel.app</span>
+      </div>
+      <div class="passos">
+        <h2>Como participar</h2>
+        <div class="passo"><span class="num">1</span><div><b>Escaneie o QR code</b><span>Use a câmera do celular e abra o link.</span></div></div>
+        <div class="passo"><span class="num">2</span><div><b>Escolha o dia e o seu estado</b><span>Sua participação entra na aderência da sua região.</span></div></div>
+        <div class="passo"><span class="num">3</span><div><b>Tire a foto com a moldura</b><span>Câmera frontal ou traseira, com temporizador.</span></div></div>
+        <div class="passo"><span class="num">4</span><div><b>Compartilhe!</b><span>Poste nas redes com #PeakSeasonSPX ou salve no celular.</span></div></div>
+        <div class="privacidade">🔒 Nenhuma foto é salva no site — ela fica só no seu celular.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="cal-cabeca"><h2>Calendário de desafios</h2><span>De 06/11 a 14/11</span></div>
+      <div class="cal">
+        <div class="dia"><div class="dia-topo"><b>DIA 1</b><span>SEX 06/11</span></div><img src="molduras/dia-1.webp" alt="" /><div class="dia-nome">Laranja + Grito de Guerra</div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 2</b><span>SÁB 07/11</span></div><img src="molduras/dia-2.webp" alt="" /><div class="dia-nome">Cabelo Maluco</div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 3</b><span>DOM 08/11</span></div><img src="molduras/dia-3.webp" alt="" /><div class="dia-nome">Cor da Equipe</div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 4</b><span>SEG 09/11</span></div><img src="molduras/dia-4.webp" alt="" /><div class="dia-nome">Foto Mais Maluca</div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 5</b><span>TER 10/11</span></div><img src="molduras/dia-5.webp" alt="" /><div class="dia-nome">Dia do Gêmeo</div></div>
+        <div class="dia grande"><div class="dia-topo"><b>DIA 6</b><span>QUA 11/11</span></div><img src="molduras/dia-6.webp" alt="" /><div class="dia-nome">Fantasy Day</div></div>
+        <div class="dia"><div class="dia-topo"><b>DIA 7</b><span>SÁB 14/11</span></div><img src="molduras/dia-7.webp" alt="" /><div class="dia-nome">The Voice / Karaokê</div></div>
+      </div>
+    </section>
+
+    <footer class="rodape">
+      <span class="hashtag">#PeakSeasonSPX</span>
+      <div class="bora">Bora participar?<em>Juntos no maior desafio do ano!</em></div>
+    </footer>
+  </main>
+</body>
+</html>
