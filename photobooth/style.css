@@ -253,3 +253,9 @@ button, input, a { font: inherit; }
 .ad-trilho { display: block; height: 8px; border-radius: 4px; background: #fde7e1; overflow: hidden; }
 .ad-barra { display: block; height: 100%; border-radius: 4px; background: var(--vermelho); transition: width .6s ease; }
 .ad-nota { margin: 0; font-size: 13px; text-align: center; opacity: .95; }
+.ad-valor { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.ad-valor b { font-weight: 700; }
+.ad-pct {
+  font-size: 12px; font-weight: 600; color: #6b4a40; background: #fdf0ec;
+  padding: 1px 7px; border-radius: 999px; min-width: 46px; text-align: center;
+}

@@ -139,16 +139,19 @@
 
   // ---------------------------------------------------------------- aderência
   const fmt = new Intl.NumberFormat("pt-BR");
-  function lista(el, itens) {
+  const fmtPct = new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  function lista(el, itens, total) {
     el.innerHTML = "";
     const max = Math.max(1, ...itens.map((i) => i.valor));
     itens.forEach((i, idx) => {
       const li = document.createElement("li");
-      li.title = `${i.rotulo}: ${fmt.format(i.valor)} participações`;
-      li.innerHTML = `<span class="ad-pos"></span><span class="ad-info"><span class="ad-linha"><span class="ad-nome"></span><span class="ad-valor"></span></span><span class="ad-sub"></span><span class="ad-trilho"><span class="ad-barra"></span></span></span>`;
+      const pct = total ? fmtPct.format(i.valor / total) : "–";
+      li.title = `${i.rotulo}: ${fmt.format(i.valor)} participações (${pct} do total)`;
+      li.innerHTML = `<span class="ad-pos"></span><span class="ad-info"><span class="ad-linha"><span class="ad-nome"></span><span class="ad-valor"><b></b><span class="ad-pct"></span></span></span><span class="ad-sub"></span><span class="ad-trilho"><span class="ad-barra"></span></span></span>`;
       li.querySelector(".ad-pos").textContent = `${idx + 1}º`;
       li.querySelector(".ad-nome").textContent = i.rotulo;
-      li.querySelector(".ad-valor").textContent = fmt.format(i.valor);
+      li.querySelector(".ad-valor b").textContent = fmt.format(i.valor);
+      li.querySelector(".ad-pct").textContent = pct;
       const sub = li.querySelector(".ad-sub");
       if (i.sub) sub.textContent = i.sub; else sub.remove();
       li.querySelector(".ad-barra").style.width = `${(i.valor / max) * 100}%`;
@@ -163,9 +166,9 @@
       $("ad-total").textContent = fmt.format(r.total);
       $("ad-estados").textContent = `${r.estadosAtivos}/27`;
       $("ad-campeao").textContent = r.dias[0] ? r.dias[0].rotulo : "–";
-      lista($("ad-regioes"), r.regioes);
-      lista($("ad-top-estados"), r.estados);
-      lista($("ad-top-dias"), r.dias);
+      lista($("ad-regioes"), r.regioes, r.total);
+      lista($("ad-top-estados"), r.estados, r.total);
+      lista($("ad-top-dias"), r.dias, r.total);
     } catch (e) {
       $("ad-total").textContent = "–";
     }
