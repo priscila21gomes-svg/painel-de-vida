@@ -23,6 +23,7 @@
           <span class="selo-titulo" id="campanha"></span>
           <span class="selo-sub" id="subtitulo"></span>
         </div>
+        <img class="mascote" src="img/mascote.webp" width="480" height="429" alt="Mascote da Shopee comemorando com sacolinhas" />
         <h1>Photobooth<br /><span>de desafios</span></h1>
         <p class="chamada">Escolha o dia, tire sua foto com a moldura e compartilhe!</p>
       </header>
@@ -40,7 +41,7 @@
       <div class="barra">
         <button class="btn-icone" id="voltar" aria-label="Voltar">←</button>
         <span id="titulo-dia" class="barra-titulo"></span>
-        <button class="btn-icone" id="trocar-camera" aria-label="Trocar câmera">⟲</button>
+        <span class="btn-icone-vazio"></span>
       </div>
 
       <div class="palco" id="palco">
@@ -57,6 +58,10 @@
       <div class="controles">
         <div class="linha-zoom" id="linha-zoom" hidden>
           <span>−</span><input type="range" id="zoom" min="1" max="3" step="0.01" value="1" aria-label="Zoom" /><span>+</span>
+        </div>
+        <div class="seletor-camera" id="seletor-camera" role="group" aria-label="Escolher câmera">
+          <button type="button" data-facing="user" class="ativo">🤳 Câmera frontal</button>
+          <button type="button" data-facing="environment">📷 Câmera traseira</button>
         </div>
         <div class="linha-botoes">
           <label class="btn-lateral" title="Enviar da galeria">

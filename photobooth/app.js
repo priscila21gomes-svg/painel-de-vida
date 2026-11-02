@@ -250,6 +250,11 @@
     if (st.stream) st.stream.getTracks().forEach((t) => t.stop());
     st.stream = null;
   }
+  function marcarCamera() {
+    for (const b of $("seletor-camera").querySelectorAll("button")) {
+      b.classList.toggle("ativo", b.dataset.facing === st.facing);
+    }
+  }
   function avisoCamera(txt) {
     $("aviso-texto").textContent = txt;
     $("aviso-camera").hidden = false;
@@ -264,7 +269,8 @@
     $("dica-ajuste").hidden = true;
     $("disparar").hidden = false;
     $("timer").hidden = false;
-    $("trocar-camera").style.visibility = "visible";
+    $("seletor-camera").hidden = false;
+    marcarCamera();
   }
   function modoAjuste(img) {
     st.still = img; st.zoom = 1; st.panX = st.panY = 0;
@@ -276,7 +282,7 @@
     $("dica-ajuste").hidden = false;
     $("disparar").hidden = true;
     $("timer").hidden = true;
-    $("trocar-camera").style.visibility = "hidden";
+    $("seletor-camera").hidden = true;
   }
 
   async function abrirDia(n) {
@@ -458,10 +464,14 @@
       $("inapp").hidden = false;
     }
     $("voltar").addEventListener("click", () => { location.hash = ""; });
-    $("trocar-camera").addEventListener("click", () => {
-      st.facing = st.facing === "user" ? "environment" : "user";
-      ligarCamera();
-    });
+    for (const b of $("seletor-camera").querySelectorAll("button")) {
+      b.addEventListener("click", () => {
+        if (st.facing === b.dataset.facing && st.stream) return;
+        st.facing = b.dataset.facing;
+        marcarCamera();
+        ligarCamera();
+      });
+    }
     $("tentar-camera").addEventListener("click", ligarCamera);
     $("disparar").addEventListener("click", disparar);
     const tempos = [0, 3, 5, 10];
