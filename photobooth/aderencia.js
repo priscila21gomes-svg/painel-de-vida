@@ -75,21 +75,24 @@
   }
 
   // Conta 1 participação por aparelho, por dia.
+  // A marca só é gravada no celular depois que o banco confirma (se a rede falhar, conta na próxima foto).
   async function registrar(dia, uf) {
-    if (!porUF[uf]) return;
-    const chave = `pb-contou-dia-${dia}`;
-    if (LS.get(chave)) return;
-    LS.set(chave, uf);
+    if (!porUF[uf]) return false;
+    const chave = `pb-v2-contou-dia-${dia}`;
+    if (LS.get(chave)) return false;
     const c = sb();
-    if (!c) return;
+    if (!c) return false;
     try {
-      await fetch(`${c.supabaseUrl}/rest/v1/aderencia`, {
+      const r = await fetch(`${c.supabaseUrl}/rest/v1/aderencia`, {
         method: "POST",
         headers: { ...cabecalhos(c), Prefer: "return=minimal" },
         body: JSON.stringify({ dia, uf, regiao: porUF[uf].regiao }),
         keepalive: true,
       });
-    } catch (e) { /* sem rede: não bloqueia a foto */ }
+      if (!r.ok) return false;
+      LS.set(chave, uf);
+      return true;
+    } catch (e) { return false; }
   }
 
   // ------------------------------------------------------------ agregações

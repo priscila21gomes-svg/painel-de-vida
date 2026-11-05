@@ -259,3 +259,5 @@ button, input, a { font: inherit; }
   font-size: 12px; font-weight: 600; color: #6b4a40; background: #fdf0ec;
   padding: 1px 7px; border-radius: 999px; min-width: 46px; text-align: center;
 }
+.ad-aviso { margin: 0; background: rgba(120, 20, 10, .25); border-radius: 16px; padding: 10px 14px; font-weight: 600; text-align: center; }
+.ad-lista li.ad-vazio { display: block; color: #9a7a70; font-size: 14px; padding: 10px 0; border: 0; }

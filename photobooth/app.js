@@ -158,6 +158,13 @@
       el.appendChild(li);
     });
   }
+  function vazio(el, texto) {
+    el.innerHTML = "";
+    const li = document.createElement("li");
+    li.className = "ad-vazio";
+    li.textContent = texto;
+    el.appendChild(li);
+  }
   async function montarAderencia() {
     try {
       const { linhas, ficticio } = await Aderencia.carregar();
@@ -165,10 +172,13 @@
       $("ad-selo").hidden = !ficticio;
       $("ad-total").textContent = fmt.format(r.total);
       $("ad-estados").textContent = `${r.estadosAtivos}/27`;
-      $("ad-campeao").textContent = r.dias[0] ? r.dias[0].rotulo : "–";
+      $("ad-campeao").textContent = r.total && r.dias[0] ? r.dias[0].rotulo : "–";
+      $("ad-aviso").hidden = r.total > 0;
       lista($("ad-regioes"), r.regioes, r.total);
-      lista($("ad-top-estados"), r.estados, r.total);
-      lista($("ad-top-dias"), r.dias, r.total);
+      if (r.estados.length) lista($("ad-top-estados"), r.estados, r.total);
+      else vazio($("ad-top-estados"), "Os estados aparecem aqui assim que as primeiras fotos forem tiradas.");
+      if (r.dias.length) lista($("ad-top-dias"), r.dias, r.total);
+      else vazio($("ad-top-dias"), "Os dias aparecem aqui assim que as primeiras fotos forem tiradas.");
     } catch (e) {
       $("ad-total").textContent = "–";
     }
@@ -587,6 +597,8 @@
     });
     configurarArraste();
     montarSeletorEstados();
+    // Atualiza os números da página inicial a cada minuto enquanto ela estiver aberta.
+    setInterval(() => { if (!$("tela-inicio").hidden && !document.hidden) montarAderencia(); }, 60000);
     window.addEventListener("hashchange", rota);
     rota();
   }

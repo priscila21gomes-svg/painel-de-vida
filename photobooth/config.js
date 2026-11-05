@@ -26,9 +26,10 @@ window.PHOTOBOOTH_CONFIG = {
   //   fonte: "ficticio" → números de demonstração
   //   fonte: "supabase" → dados reais (rode supabase/aderencia.sql e preencha url/chave)
   aderencia: {
-    fonte: "ficticio",
-    supabaseUrl: "",
-    supabaseAnonKey: "",
+    fonte: "supabase",
+    supabaseUrl: "https://bsfawieggmytqmybhbze.supabase.co",
+    // Chave pública (anon): só permite gravar participações e ler os totais.
+    supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzZmF3aWVnZ215dHFteWJoYnplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODcxOTIsImV4cCI6MjEwOTQ2MzE5Mn0.9bANU2oVdU8Hz29TsbCjNwA7ACZp8ryA1x1rBa0hb3A",
   },
 
   dias: [
