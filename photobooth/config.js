@@ -69,7 +69,7 @@ window.PHOTOBOOTH_CONFIG = {
       moldura: "molduras/dia-6.webp",
     },
     {
-      dia: 7, data: "2026-11-14", icone: "🎤",
+      dia: 7, data: "2026-11-12", icone: "🎤",
       nome: "The Voice / Karaokê",
       descricao: "Karaokê e talentos do time",
       moldura: "molduras/dia-7.webp",
