@@ -18,9 +18,12 @@ window.PHOTOBOOTH_CONFIG = {
   subtitulo: "7 dias, 7 desafios",
   hashtag: "#PeakSeasonSPX",
 
-  // true = dias futuros ficam bloqueados até a data chegar.
-  // Para testar todos antes da hora, abra o site com ?todos=1 no final.
-  bloquearDiasFuturos: false,
+  // Janela de cada desafio (horário de Brasília): abre às 00h da data do dia
+  // e fecha às `horaFechamento` do dia seguinte. Antes: cadeado. Depois: concluído (✓).
+  // true = respeita a janela. false = todos os dias liberados (modo teste).
+  // Dica: para testar tudo sem mexer aqui, abra o site com ?todos=1 no final.
+  bloquearDiasFuturos: true,
+  horaFechamento: 6,
 
   // Aderência por estado/região (nenhuma foto é enviada, só "dia + estado").
   //   fonte: "ficticio" → números de demonstração

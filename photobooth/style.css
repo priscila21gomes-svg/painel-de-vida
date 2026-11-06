@@ -318,3 +318,18 @@ button, input, a { font: inherit; }
 @media (prefers-reduced-motion: reduce) { .gl-card { transition: none; } }
 
 .gl-total:empty { display: none; }
+
+/* ---------- ESTADO DOS DIAS: concluído (✓) e bloqueado (🔒) ---------- */
+.card.fase-concluido, .card.fase-futuro { cursor: default; }
+.card.fase-concluido .card-corpo, .card.fase-futuro .card-corpo { filter: grayscale(.6); opacity: .45; }
+.card.fase-concluido .card-topo, .card.fase-futuro .card-topo { filter: grayscale(.4); }
+.card-selo {
+  position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%);
+  width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center;
+  box-shadow: 0 8px 18px rgba(80, 10, 0, .35); pointer-events: none; z-index: 2;
+}
+.selo-ok { background: #2fa84f; color: #fff; font-size: 54px; font-weight: 700; border: 5px solid #fff; line-height: 1; }
+.selo-cadeado { background: #fff; font-size: 42px; border: 5px solid var(--vermelho); }
+.card.fase-concluido .card-status { background: #e3f6e8; color: #1f6b2a; }
+.card.fase-futuro .card-status { background: #f3e9e6; color: #6b4a40; }
+.card.fase-concluido.destaque .card-corpo, .card.fase-futuro.destaque .card-corpo { background: #f5e3a8; }

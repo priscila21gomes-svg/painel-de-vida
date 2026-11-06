@@ -36,14 +36,27 @@
     const dt = new Date(y, m - 1, d);
     return `${SEMANA[dt.getDay()]} ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`;
   };
+  // Janela do desafio no horário de Brasília (UTC-3, sem horário de verão):
+  // abre às 00h da data e fecha às `horaFechamento` (padrão 06h) do dia seguinte.
+  const janela = (dia) => {
+    const [y, m, d] = dia.data.split("-").map(Number);
+    const abre = Date.UTC(y, m - 1, d, 3, 0, 0);               // 00h de Brasília
+    const horas = 24 + (CFG.horaFechamento ?? 6);
+    return { abre, fecha: abre + horas * 3600 * 1000 };
+  };
+  const ddmm = (ms) => {
+    const dt = new Date(ms - 3 * 3600 * 1000);                 // "relógio" de Brasília
+    return `${String(dt.getUTCDate()).padStart(2, "0")}/${String(dt.getUTCMonth() + 1).padStart(2, "0")}`;
+  };
+  const hh = (ms) => `${String(new Date(ms - 3 * 3600 * 1000).getUTCHours()).padStart(2, "0")}h`;
   const statusDia = (dia) => {
-    const hoje = hojeISO();
-    if (!dia.moldura) return { ok: false, texto: "Moldura em breve" };
-    if (dia.data === hoje) return { ok: true, hoje: true, texto: "Hoje! Tirar foto" };
-    if (dia.data > hoje && CFG.bloquearDiasFuturos && !liberarTodos) {
-      return { ok: false, texto: `Libera ${rotuloData(dia.data).split(" ")[1]}` };
-    }
-    return { ok: true, texto: "Tirar foto" };
+    if (!dia.moldura) return { ok: false, fase: "breve", texto: "Moldura em breve" };
+    if (!CFG.bloquearDiasFuturos || liberarTodos) return { ok: true, fase: "aberto", texto: "Tirar foto" };
+    const agora = Date.now();
+    const { abre, fecha } = janela(dia);
+    if (agora < abre) return { ok: false, fase: "futuro", texto: `Libera ${ddmm(abre)} às 00h` };
+    if (agora >= fecha) return { ok: false, fase: "concluido", texto: "Desafio concluído" };
+    return { ok: true, fase: "aberto", hoje: true, texto: `Tirar foto · até ${ddmm(fecha)} às ${hh(fecha)}` };
   };
 
   // ---------------------------------------------------------------- tela inicial
@@ -58,7 +71,8 @@
     for (const dia of CFG.dias) {
       const s = statusDia(dia);
       const b = document.createElement("button");
-      b.className = "card" + (s.hoje ? " hoje" : "") + (dia.destaque ? " destaque" : "") + (s.ok ? "" : " bloqueado");
+      b.className = "card" + (s.hoje ? " hoje" : "") + (dia.destaque ? " destaque" : "") + (s.ok ? "" : " bloqueado") + ` fase-${s.fase}`;
+      if (!s.ok) b.setAttribute("aria-disabled", "true");
       b.type = "button";
       b.innerHTML = `
         ${dia.destaque ? `<span class="card-fita"></span>` : ""}
@@ -68,7 +82,9 @@
           <span class="card-nome"></span>
           <span class="card-desc"></span>
           <span class="card-status"></span>
-        </span>`;
+        </span>
+        ${s.fase === "concluido" ? '<span class="card-selo selo-ok" aria-hidden="true">✓</span>' : ""}
+        ${s.fase === "futuro" ? '<span class="card-selo selo-cadeado" aria-hidden="true">🔒</span>' : ""}`;
       if (dia.destaque) b.querySelector(".card-fita").textContent = dia.destaque;
       b.querySelector(".card-icone").textContent = dia.icone || "📷";
       b.querySelector(".card-nome").textContent = dia.nome;
@@ -824,6 +840,13 @@
     configurarArraste();
     montarSeletorEstados();
     configurarCarrossel();
+    // Cards dos dias: abrem/fecham sozinhos na virada (00h e 06h de Brasília).
+    let ultimoEstado = "";
+    setInterval(() => {
+      const estado = CFG.dias.map((d) => statusDia(d).fase).join();
+      if (estado !== ultimoEstado && !$("tela-inicio").hidden) montarInicio();
+      ultimoEstado = estado;
+    }, 30000);
     // Atualiza os números da página inicial a cada minuto enquanto ela estiver aberta.
     setInterval(() => { if (!$("tela-inicio").hidden && !document.hidden) montarAderencia(); }, 60000);
     window.addEventListener("hashchange", rota);
