@@ -1,5 +1,5 @@
 /**
- * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE
+ * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 4: com galeria)
  * ------------------------------------------------------------
  * Recebe a foto enviada pelo site (quando a pessoa toca em
  * "Enviar para o álbum da campanha") e salva numa pasta do Drive,
@@ -27,6 +27,12 @@ const NOMES_DIAS = {
   6: "Fantasy Day",
   7: "The Voice - Karaokê",
 };
+// Galeria do site: usa cópias leves das fotos, guardadas nesta subpasta.
+const PASTA_PREVIAS = "_galeria (cópias leves)";
+// true = a galeria só mostra as cópias marcadas com ESTRELA no Drive (moderação antes de aparecer).
+// false = toda foto enviada aparece. Para tirar uma foto da galeria, apague a cópia dela em "_galeria".
+const SO_COM_ESTRELA = false;
+
 const UFS = ["AC","AP","AM","PA","RO","RR","TO","AL","BA","CE","MA","PB","PE","PI","RN","SE",
              "DF","GO","MT","MS","ES","MG","RJ","SP","PR","RS","SC"];
 
@@ -52,6 +58,16 @@ function doPost(e) {
     const nome = "dia-" + dia + "_" + uf + "_" + agora + "_" + Utilities.getUuid().slice(0, 4) + ".jpg";
     pastaDoDia(dia).createFile(Utilities.newBlob(bytes, "image/jpeg", nome));
 
+    // Cópia leve para a galeria do site (enviada pelo próprio site, ~25 KB).
+    const previa = String(dados.previa || "").replace(/^data:image\/jpeg;base64,/, "");
+    if (previa) {
+      const pb = Utilities.base64Decode(previa);
+      if (pb.length > 500 && pb.length < 300 * 1024 && (pb[0] & 0xff) === 0xff && (pb[1] & 0xff) === 0xd8) {
+        pastaPrevias().createFile(Utilities.newBlob(pb, "image/jpeg", nome));
+        CacheService.getScriptCache().remove("galeria_lista");
+      }
+    }
+
     if (id) CacheService.getScriptCache().put("up_" + id, "ok", 900);
     return json({ ok: true });
   } catch (erro) {
@@ -69,8 +85,10 @@ function falhou(id, motivo) {
 //   ?acao=status&id=...&callback=fn → responde fn({...}) dizendo se a foto chegou
 function doGet(e) {
   const p = (e && e.parameter) || {};
-  let corpo = { ok: true, servico: "photobooth-drive", versao: 3 };
-  if (p.acao === "status") {
+  let corpo = { ok: true, servico: "photobooth-drive", versao: 4 };
+  if (p.acao === "galeria") {
+    try { corpo = galeria(p); } catch (erro) { corpo = { ok: false, erro: String(erro) }; }
+  } else if (p.acao === "status") {
     const id = /^[a-z0-9-]{8,40}$/.test(String(p.id || "")) ? String(p.id) : "";
     const v = id ? CacheService.getScriptCache().get("up_" + id) : null;
     corpo = v === "ok" ? { ok: true, status: "salva" }
@@ -83,6 +101,46 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   return json(corpo);
+}
+
+// ------------------------------------------------------------------ GALERIA
+function pastaPrevias() {
+  return pegarOuCriar(pegarOuCriar(DriveApp.getRootFolder(), PASTA_RAIZ), PASTA_PREVIAS);
+}
+
+function listarPrevias() {
+  const cache = CacheService.getScriptCache();
+  const salvo = cache.get("galeria_lista");
+  if (salvo) return JSON.parse(salvo);
+  const lista = [];
+  const arquivos = pastaPrevias().getFiles();
+  while (arquivos.hasNext()) {
+    const f = arquivos.next();
+    if (f.isTrashed()) continue;
+    if (SO_COM_ESTRELA && !f.isStarred()) continue;
+    const m = f.getName().match(/^dia-(\d)_([A-Z]{2})_/);
+    if (!m) continue;
+    lista.push({ id: f.getId(), dia: Number(m[1]), uf: m[2], t: f.getDateCreated().getTime() });
+  }
+  lista.sort(function (a, b) { return b.t - a.t; });
+  try { cache.put("galeria_lista", JSON.stringify(lista), 60); } catch (e) { /* lista grande demais para o cache */ }
+  return lista;
+}
+
+// Últimas fotos (cópias leves), mais recentes primeiro.
+function galeria(p) {
+  const limite = Math.min(24, Math.max(1, Number(p.limite) || 16));
+  const lista = listarPrevias();
+  const cache = CacheService.getScriptCache();
+  const fotos = lista.slice(0, limite).map(function (f) {
+    let img = cache.get("pv_" + f.id);
+    if (!img) {
+      img = "data:image/jpeg;base64," + Utilities.base64Encode(DriveApp.getFileById(f.id).getBlob().getBytes());
+      try { cache.put("pv_" + f.id, img, 21600); } catch (e) { /* imagem grande demais para o cache */ }
+    }
+    return { dia: f.dia, uf: f.uf, t: f.t, img: img };
+  });
+  return { ok: true, total: lista.length, fotos: fotos };
 }
 
 function pastaDoDia(dia) {

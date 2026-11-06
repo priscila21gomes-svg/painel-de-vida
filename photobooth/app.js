@@ -82,6 +82,120 @@
     }
     atualizarChipLocal();
     montarAderencia();
+    montarGaleria();
+  }
+
+
+  // ---------------------------------------------------------------- galeria (carrossel)
+  const gl = { fotos: [], atual: 0, timer: null, carregando: false, ultima: 0 };
+  const calmo = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  async function montarGaleria(forcar) {
+    if (!urlDrive() || gl.carregando) return;
+    if (!forcar && Date.now() - gl.ultima < 60000 && gl.fotos.length) return;
+    gl.carregando = true;
+    $("gl-secao").hidden = false;
+    if (!gl.fotos.length) $("gl-status").textContent = "Carregando fotos…";
+    try {
+      const r = await perguntarScript({ acao: "galeria", limite: 16 }, 20000);
+      if (!r || !r.ok || !Array.isArray(r.fotos)) throw new Error((r && r.erro) || "versão antiga");
+      gl.ultima = Date.now();
+      const nomeDia = Object.fromEntries(CFG.dias.map((d) => [d.dia, d.nome]));
+      const novas = r.fotos.map((f) => ({ ...f, legenda: `Dia ${f.dia} · ${nomeDia[f.dia] || ""}${f.uf ? " · " + (Aderencia.porUF[f.uf] ? Aderencia.porUF[f.uf].nome : f.uf) : ""}` }));
+      const mudou = novas.map((f) => f.t).join() !== gl.fotos.map((f) => f.t).join();
+      gl.fotos = novas;
+      $("gl-total").textContent = r.total ? `${fmt.format(r.total)} ${r.total === 1 ? "foto" : "fotos"}` : "";
+      $("gl-palco").hidden = !gl.fotos.length;
+      $("gl-status").textContent = gl.fotos.length ? "" : "As fotos aparecem aqui assim que o pessoal começar a participar. Seja o primeiro! 📸";
+      if (mudou) { gl.atual = 0; desenharCarrossel(true); }
+      tocarCarrossel();
+    } catch (e) {
+      if (!gl.fotos.length) {
+        $("gl-palco").hidden = true;
+        $("gl-status").textContent = e.message === "versao-antiga" || e.message === "versão antiga"
+          ? "A galeria aparece aqui em breve."
+          : "Não foi possível carregar a galeria agora.";
+      }
+    } finally {
+      gl.carregando = false;
+    }
+  }
+
+  function desenharCarrossel(recriar) {
+    const trilho = $("gl-trilho"), pontos = $("gl-pontos");
+    const n = gl.fotos.length;
+    if (recriar) {
+      trilho.innerHTML = ""; pontos.innerHTML = "";
+      gl.fotos.forEach((f, i) => {
+        const card = document.createElement("figure");
+        card.className = "gl-card";
+        const img = document.createElement("img");
+        img.src = f.img; img.alt = f.legenda; img.decoding = "async";
+        card.appendChild(img);
+        card.addEventListener("click", () => { if (i !== gl.atual) irPara(i); });
+        trilho.appendChild(card);
+        const ponto = document.createElement("button");
+        ponto.type = "button"; ponto.className = "gl-ponto"; ponto.setAttribute("aria-label", `Ver foto ${i + 1}`);
+        ponto.addEventListener("click", () => irPara(i));
+        pontos.appendChild(ponto);
+      });
+    }
+    const largura = $("gl-palco").clientWidth;
+    const passo = Math.min(170, largura * 0.36);
+    [...trilho.children].forEach((card, i) => {
+      // distância circular até a foto atual (-n/2 .. n/2)
+      let d = i - gl.atual;
+      if (d > n / 2) d -= n;
+      if (d < -n / 2) d += n;
+      const ad = Math.abs(d);
+      const visivel = ad <= 2;
+      card.style.transform = `translateX(calc(-50% + ${d * passo}px)) scale(${1 - ad * 0.17}) rotate(${d * 5}deg)`;
+      card.style.zIndex = String(10 - ad);
+      card.style.opacity = visivel ? String(1 - ad * 0.28) : "0";
+      card.style.pointerEvents = visivel ? "auto" : "none";
+      card.classList.toggle("atual", d === 0);
+      card.setAttribute("aria-hidden", d === 0 ? "false" : "true");
+    });
+    [...pontos.children].forEach((p, i) => p.classList.toggle("ativo", i === gl.atual));
+    pontos.hidden = n > 16 || n < 2;
+    $("gl-ant").hidden = $("gl-prox").hidden = n < 2;
+    $("gl-legenda").textContent = n ? gl.fotos[gl.atual].legenda : "";
+  }
+
+  function irPara(i, auto) {
+    const n = gl.fotos.length;
+    if (!n) return;
+    gl.atual = (i + n) % n;
+    desenharCarrossel(false);
+    if (!auto) tocarCarrossel(); // reinicia a contagem depois de um toque
+  }
+  function tocarCarrossel() {
+    clearInterval(gl.timer);
+    if (calmo || gl.fotos.length < 2) return;
+    gl.timer = setInterval(() => {
+      if (document.hidden || $("tela-inicio").hidden || gl.pausado) return;
+      irPara(gl.atual + 1, true);
+    }, 3200);
+  }
+  function configurarCarrossel() {
+    $("gl-ant").addEventListener("click", () => irPara(gl.atual - 1));
+    $("gl-prox").addEventListener("click", () => irPara(gl.atual + 1));
+    const palco = $("gl-palco");
+    let x0 = null;
+    palco.addEventListener("pointerdown", (e) => { x0 = e.clientX; gl.pausado = true; });
+    const soltar = (e) => {
+      gl.pausado = false;
+      if (x0 === null) return;
+      const dx = e.clientX - x0; x0 = null;
+      if (Math.abs(dx) > 35) irPara(gl.atual + (dx < 0 ? 1 : -1));
+    };
+    palco.addEventListener("pointerup", soltar);
+    palco.addEventListener("pointercancel", () => { x0 = null; gl.pausado = false; });
+    palco.addEventListener("mouseenter", () => { gl.pausado = true; });
+    palco.addEventListener("mouseleave", () => { gl.pausado = false; });
+    window.addEventListener("resize", () => { if (gl.fotos.length) desenharCarrossel(false); });
+    // Busca fotos novas a cada 2 minutos enquanto a página inicial estiver aberta.
+    setInterval(() => { if (!$("tela-inicio").hidden && !document.hidden) montarGaleria(true); }, 120000);
   }
 
   // ---------------------------------------------------------------- estado / região
@@ -449,6 +563,11 @@
     desenhar(cv.getContext("2d"), 1, fonte, espelhar);
     const blob = await new Promise((r) => cv.toBlob(r, "image/jpeg", 0.92));
     if (!blob) return;
+    // Cópia leve (~25 KB) usada só na galeria do site.
+    const pv = document.createElement("canvas");
+    pv.width = 300; pv.height = Math.round(300 * m.H / m.W);
+    pv.getContext("2d").drawImage(cv, 0, 0, pv.width, pv.height);
+    st.previa = pv.toDataURL("image/jpeg", 0.72).split(",")[1];
     if (st.resultadoURL) URL.revokeObjectURL(st.resultadoURL);
     const nome = `${slug(CFG.campanha)}-dia-${st.dia.dia}-${Date.now().toString(36)}.jpg`;
     st.resultadoFile = new File([blob], nome, { type: "image/jpeg" });
@@ -525,6 +644,7 @@
           uf: local ? local.uf : "",
           autorizado: true,
           imagem: await paraBase64(foto),
+          previa: st.previa || "",
         }),
       });
       // 2) Confirma com o script se a foto foi salva no Drive.
@@ -703,6 +823,7 @@
     });
     configurarArraste();
     montarSeletorEstados();
+    configurarCarrossel();
     // Atualiza os números da página inicial a cada minuto enquanto ela estiver aberta.
     setInterval(() => { if (!$("tela-inicio").hidden && !document.hidden) montarAderencia(); }, 60000);
     window.addEventListener("hashchange", rota);
