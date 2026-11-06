@@ -32,6 +32,13 @@ window.PHOTOBOOTH_CONFIG = {
     supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzZmF3aWVnZ215dHFteWJoYnplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODcxOTIsImV4cCI6MjEwOTQ2MzE5Mn0.9bANU2oVdU8Hz29TsbCjNwA7ACZp8ryA1x1rBa0hb3A",
   },
 
+  // Álbum da campanha no Google Drive (opcional — a pessoa escolhe enviar).
+  // Cole aqui a URL do Apps Script (veja google-drive/COMO-ATIVAR.md).
+  // Vazio = botão escondido; nenhuma foto sai do celular.
+  drive: {
+    urlScript: "",
+  },
+
   dias: [
     {
       dia: 1, data: "2026-11-06", icone: "📣",

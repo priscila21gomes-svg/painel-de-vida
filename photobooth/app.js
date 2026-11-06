@@ -464,7 +464,56 @@
     $("dica-salvar").hidden = !isIOS;
     const local = Aderencia.localAtual();
     if (local) Aderencia.registrar(st.dia.dia, local.uf);
+    prepararAlbum();
     mostrar("tela-resultado");
+  }
+
+  // ---------------------------------------------------------------- álbum (Google Drive)
+  const urlDrive = () => (CFG.drive && CFG.drive.urlScript) || "";
+  function prepararAlbum() {
+    $("album").hidden = !urlDrive();
+    $("album-ok").checked = false;
+    $("album-enviar").disabled = true;
+    $("album-enviar").textContent = "📤 Enviar para o álbum da campanha";
+    $("album-enviar").classList.remove("enviado");
+    $("album-status").textContent = "";
+    st.albumEnviado = false;
+  }
+  const paraBase64 = (blob) => new Promise((ok, erro) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(",")[1]);
+    r.onerror = erro;
+    r.readAsDataURL(blob);
+  });
+  async function enviarAlbum() {
+    if (!st.resultadoFile || st.albumEnviado || !$("album-ok").checked) return;
+    const local = Aderencia.localAtual();
+    const botao = $("album-enviar");
+    botao.disabled = true;
+    botao.textContent = "⏳ Enviando…";
+    $("album-status").textContent = "";
+    try {
+      const resp = await fetch(urlDrive(), {
+        method: "POST",
+        // text/plain evita a checagem extra de CORS que o Apps Script não responde.
+        body: JSON.stringify({
+          dia: st.dia.dia,
+          uf: local ? local.uf : "",
+          autorizado: true,
+          imagem: await paraBase64(st.resultadoFile),
+        }),
+      });
+      const j = await resp.json().catch(() => ({ ok: resp.ok }));
+      if (!j.ok) throw new Error(j.erro || "falha");
+      st.albumEnviado = true;
+      botao.textContent = "✅ Foto enviada para o álbum!";
+      botao.classList.add("enviado");
+      $("album-status").textContent = "Valeu por participar! 🧡";
+    } catch (e) {
+      botao.disabled = false;
+      botao.textContent = "📤 Tentar enviar de novo";
+      $("album-status").textContent = "Não deu certo agora. Confira a internet e tente de novo.";
+    }
   }
 
   const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -589,6 +638,8 @@
     $("galeria").addEventListener("change", (e) => { lerGaleria(e.target.files[0]); e.target.value = ""; });
     $("usar-foto").addEventListener("click", () => { if (st.still) gerarResultado(st.still, false); });
     $("compartilhar").addEventListener("click", compartilhar);
+    $("album-ok").addEventListener("change", (e) => { if (!st.albumEnviado) $("album-enviar").disabled = !e.target.checked; });
+    $("album-enviar").addEventListener("click", enviarAlbum);
     $("refazer").addEventListener("click", voltarParaCamera);
     $("refazer-topo").addEventListener("click", voltarParaCamera);
     document.addEventListener("visibilitychange", () => {

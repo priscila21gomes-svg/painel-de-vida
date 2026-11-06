@@ -261,3 +261,15 @@ button, input, a { font: inherit; }
 }
 .ad-aviso { margin: 0; background: rgba(120, 20, 10, .25); border-radius: 16px; padding: 10px 14px; font-weight: 600; text-align: center; }
 .ad-lista li.ad-vazio { display: block; color: #9a7a70; font-size: 14px; padding: 10px 0; border: 0; }
+
+/* ---------- ÁLBUM (Google Drive) ---------- */
+.album {
+  width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 8px;
+  background: rgba(120, 20, 10, .22); border-radius: 18px; padding: 12px;
+}
+.album .btn { width: 100%; }
+.album-check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.3; cursor: pointer; }
+.album-check input { width: 20px; height: 20px; flex: none; margin: 0; accent-color: var(--amarelo); }
+.album-status { margin: 0; font-size: 13px; text-align: center; min-height: 0; }
+.album-status:empty { display: none; }
+.album .btn.enviado { opacity: 1; background: #e9fbe9; color: #1f6b2a; cursor: default; }
