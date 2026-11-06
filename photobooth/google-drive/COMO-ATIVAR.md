@@ -38,6 +38,14 @@ drive: {
 
 Publique o site de novo. O bloco de autorização + botão aparece na tela da foto pronta.
 
+## Galeria no site
+A seção **📸 Galeria** da página inicial mostra as fotos enviadas (mais recentes primeiro, com filtro por dia).
+- As miniaturas e as fotos são entregues pelo próprio script — **não é preciso compartilhar a pasta** no Drive.
+- O script só entrega arquivos que estão nas pastas da campanha.
+- **Tirar uma foto da galeria:** apague o arquivo no Drive (some em até 1 minuto).
+- **Moderação antes de publicar:** no `Code.gs`, troque `SO_COM_ESTRELA = false` por `true`.
+  Aí só aparecem as fotos que você marcar com ⭐ no Drive.
+
 ## Se mudar o código do script depois
 Use **Implantar → Gerenciar implantações → editar (lápis) → Versão: Nova versão → Implantar**.
 Assim a URL continua a mesma.

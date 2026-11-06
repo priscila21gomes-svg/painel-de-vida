@@ -52,15 +52,82 @@ function doPost(e) {
 
     const pasta = pastaDoDia(dia);
     pasta.createFile(blob);
+    CacheService.getScriptCache().remove("lista"); // aparece na galeria na hora
     return resposta({ ok: true });
   } catch (erro) {
     return resposta({ ok: false, erro: String(erro) });
   }
 }
 
-// Abrir a URL do script no navegador mostra se ele está no ar.
-function doGet() {
-  return resposta({ ok: true, servico: "photobooth-drive" });
+// ------------------------------------------------------------------ GALERIA
+// true = a galeria só mostra fotos marcadas com ESTRELA no Drive (moderação antes de publicar).
+// false = toda foto enviada aparece (para tirar uma foto da galeria, é só apagá-la do Drive).
+const SO_COM_ESTRELA = false;
+
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  try {
+    if (p.acao === "galeria") return resposta(galeria(p));
+    if (p.acao === "foto") return resposta(foto(p.id));
+  } catch (erro) {
+    return resposta({ ok: false, erro: String(erro) });
+  }
+  // Abrir a URL do script no navegador mostra se ele está no ar.
+  return resposta({ ok: true, servico: "photobooth-drive", galeria: true });
+}
+
+// Lista as fotos da campanha (mais recentes primeiro). Guardada em cache por 1 minuto.
+function listarFotos() {
+  const cache = CacheService.getScriptCache();
+  const salvo = cache.get("lista");
+  if (salvo) return JSON.parse(salvo);
+  const raiz = pegarOuCriar(DriveApp.getRootFolder(), PASTA_RAIZ);
+  const lista = [];
+  for (let dia = 1; dia <= 7; dia++) {
+    const pastas = raiz.getFoldersByName("Dia " + dia + " - " + NOMES_DIAS[dia]);
+    if (!pastas.hasNext()) continue;
+    const arquivos = pastas.next().getFilesByType(MimeType.JPEG);
+    while (arquivos.hasNext()) {
+      const f = arquivos.next();
+      if (f.isTrashed()) continue;
+      if (SO_COM_ESTRELA && !f.isStarred()) continue;
+      const m = f.getName().match(/^dia-\d_([A-Z]{2})_/);
+      lista.push({ id: f.getId(), dia: dia, uf: m ? m[1] : "", t: f.getDateCreated().getTime() });
+    }
+  }
+  lista.sort(function (a, b) { return b.t - a.t; });
+  try { cache.put("lista", JSON.stringify(lista), 60); } catch (e) { /* lista grande demais para o cache */ }
+  return lista;
+}
+
+function galeria(p) {
+  const dia = Number(p.dia) || 0;
+  const pular = Math.max(0, Number(p.pular) || 0);
+  const limite = Math.min(24, Math.max(1, Number(p.limite) || 12));
+  let lista = listarFotos();
+  if (dia) lista = lista.filter(function (f) { return f.dia === dia; });
+  const pagina = lista.slice(pular, pular + limite);
+  const cache = CacheService.getScriptCache();
+  const fotos = pagina.map(function (f) {
+    let thumb = cache.get("th_" + f.id);
+    if (!thumb) {
+      const blob = DriveApp.getFileById(f.id).getThumbnail();
+      if (blob) {
+        thumb = "data:" + blob.getContentType() + ";base64," + Utilities.base64Encode(blob.getBytes());
+        try { cache.put("th_" + f.id, thumb, 21600); } catch (e) { /* miniatura grande demais para o cache */ }
+      }
+    }
+    return { id: f.id, dia: f.dia, uf: f.uf, t: f.t, thumb: thumb || "" };
+  });
+  return { ok: true, total: lista.length, fotos: fotos };
+}
+
+// Foto em tamanho cheio — só entrega arquivos que estão nas pastas da campanha.
+function foto(id) {
+  const item = listarFotos().filter(function (f) { return f.id === id; })[0];
+  if (!item) return { ok: false, erro: "foto não encontrada" };
+  const blob = DriveApp.getFileById(id).getBlob();
+  return { ok: true, dia: item.dia, uf: item.uf, t: item.t, imagem: "data:image/jpeg;base64," + Utilities.base64Encode(blob.getBytes()) };
 }
 
 function pastaDoDia(dia) {
