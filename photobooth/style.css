@@ -316,3 +316,5 @@ button, input, a { font: inherit; }
 .gl-status { margin: 0; text-align: center; font-weight: 600; font-size: 14px; }
 .gl-status:empty { display: none; }
 @media (prefers-reduced-motion: reduce) { .gl-card { transition: none; } }
+
+.gl-total:empty { display: none; }
