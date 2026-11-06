@@ -36,7 +36,7 @@ window.PHOTOBOOTH_CONFIG = {
   // Cole aqui a URL do Apps Script (veja google-drive/COMO-ATIVAR.md).
   // Vazio = botão escondido; nenhuma foto sai do celular.
   drive: {
-    urlScript: "https://script.google.com/macros/s/AKfycbwpr9lru_Lxqi6jWuAJQutUiRhHrgy_PkQ78mRo1yauksiOcL-FZPZhFijZH0gCN024/exec",
+    urlScript: "https://script.google.com/macros/s/AKfycbwris9GGlnBfaT7zF103tdY_rARxuQaTmFgxpN887juINTMCHM2hge0Txra1nr5pia-FA/exec",
   },
 
   dias: [
