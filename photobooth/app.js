@@ -472,11 +472,13 @@
   const urlDrive = () => (CFG.drive && CFG.drive.urlScript) || "";
   function prepararAlbum() {
     $("album").hidden = !urlDrive();
+    $("album").className = "album";
+    $("album-enviar").hidden = true;
     $("album-enviar").disabled = false;
-    $("album-enviar").textContent = "📤 Enviar para o álbum da campanha";
-    $("album-enviar").classList.remove("enviado");
     $("album-status").textContent = "";
     st.albumEnviado = false;
+    // A foto sobe sozinha para o álbum assim que fica pronta.
+    if (urlDrive()) enviarAlbum();
   }
   const paraBase64 = (blob) => new Promise((ok, erro) => {
     const r = new FileReader();
@@ -505,9 +507,12 @@
     if (!st.resultadoFile || st.albumEnviado) return;
     const local = Aderencia.localAtual();
     const botao = $("album-enviar");
+    const status = $("album-status");
+    const foto = st.resultadoFile; // se a pessoa tirar outra no meio do envio, não mistura
+    botao.hidden = true;
     botao.disabled = true;
-    botao.textContent = "⏳ Enviando…";
-    $("album-status").textContent = "";
+    $("album").className = "album enviando";
+    status.textContent = "⏳ Enviando sua foto para o álbum da campanha…";
     const id = novoId();
     try {
       // 1) Envia sem ler a resposta (modo no-cors): o navegador não bloqueia esse envio.
@@ -519,11 +524,11 @@
           dia: st.dia.dia,
           uf: local ? local.uf : "",
           autorizado: true,
-          imagem: await paraBase64(st.resultadoFile),
+          imagem: await paraBase64(foto),
         }),
       });
       // 2) Confirma com o script se a foto foi salva no Drive.
-      botao.textContent = "⏳ Confirmando…";
+      status.textContent = "⏳ Confirmando o envio…";
       let r = null;
       for (const pausa of [500, 1000, 1500, 2500, 4000]) {
         await esperar(pausa);
@@ -537,14 +542,17 @@
       if (!r) throw new Error("O álbum não respondeu. Confira a internet e tente de novo.");
       if (r.status === "erro") throw new Error("O álbum recusou a foto (" + (r.erro || "erro") + ").");
       if (r.status !== "salva") throw new Error("Não conseguimos confirmar o envio. Tente de novo.");
+      if (foto !== st.resultadoFile) return;
       st.albumEnviado = true;
-      botao.textContent = "✅ Foto enviada para o álbum!";
-      botao.classList.add("enviado");
-      $("album-status").textContent = "Valeu por participar! 🧡";
+      $("album").className = "album enviado";
+      status.textContent = "✅ Sua foto foi para o álbum da campanha! Valeu por participar 🧡";
     } catch (e) {
+      if (foto !== st.resultadoFile) return;
+      $("album").className = "album falhou";
+      botao.hidden = false;
       botao.disabled = false;
       botao.textContent = "📤 Tentar enviar de novo";
-      $("album-status").textContent = (e && e.message && !/fetch/i.test(e.message)) ? e.message : "Não deu certo agora. Confira a internet e tente de novo.";
+      status.textContent = "⚠️ A foto não foi para o álbum: " + ((e && e.message && !/fetch/i.test(e.message)) ? e.message : "confira a internet e tente de novo.");
     }
   }
 

@@ -272,3 +272,7 @@ button, input, a { font: inherit; }
 .album-status:empty { display: none; }
 .album .btn.enviado { opacity: 1; background: #e9fbe9; color: #1f6b2a; cursor: default; }
 
+
+.album-status { font-weight: 600; font-size: 14px; }
+.album.enviado { background: rgba(31, 107, 42, .35); }
+.album.falhou { background: rgba(120, 20, 10, .4); }
