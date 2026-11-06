@@ -82,86 +82,7 @@
     }
     atualizarChipLocal();
     montarAderencia();
-    montarGaleria(true);
   }
-
-  // ---------------------------------------------------------------- galeria (fotos do álbum)
-  const gl = { dia: 0, pular: 0, carregando: false, filtrosProntos: false };
-  const POR_PAGINA = 12;
-  function montarFiltrosGaleria() {
-    if (gl.filtrosProntos) return;
-    gl.filtrosProntos = true;
-    const box = $("gl-filtros");
-    const opcoes = [{ dia: 0, rotulo: "Todos" }].concat(CFG.dias.map((d) => ({ dia: d.dia, rotulo: `Dia ${d.dia}` })));
-    for (const o of opcoes) {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "gl-filtro" + (o.dia === gl.dia ? " ativo" : "");
-      b.textContent = o.rotulo; b.setAttribute("role", "tab");
-      b.addEventListener("click", () => {
-        if (gl.dia === o.dia) return;
-        gl.dia = o.dia;
-        for (const x of box.children) x.classList.toggle("ativo", x === b);
-        montarGaleria(true);
-      });
-      box.appendChild(b);
-    }
-  }
-  async function montarGaleria(recomecar) {
-    const url = urlDrive();
-    if (!url || gl.carregando) return;
-    gl.carregando = true;
-    if (recomecar) { gl.pular = 0; $("gl-grade").innerHTML = ""; }
-    $("gl-status").textContent = "Carregando fotos…";
-    $("gl-mais").hidden = true;
-    $("gl-secao").hidden = false;
-    try {
-      let r;
-      try {
-        r = await fetch(`${url}?acao=galeria&dia=${gl.dia}&pular=${gl.pular}&limite=${POR_PAGINA}`);
-      } catch (e) { throw new Error("o navegador não conseguiu falar com o script do Google (rede ou bloqueio)"); }
-      const texto = await r.text();
-      let j;
-      try { j = JSON.parse(texto); } catch (e) { throw new Error("o script respondeu uma página em vez de dados — confira se a implantação está como 'Qualquer pessoa'"); }
-      if (!j.ok) throw new Error("o script deu erro: " + (j.erro || "desconhecido"));
-      if (!Array.isArray(j.fotos)) throw new Error("o script ainda é a versão antiga — implante a nova versão (Gerenciar implantações → Nova versão)");
-      montarFiltrosGaleria();
-      const nomeDia = Object.fromEntries(CFG.dias.map((d) => [d.dia, d.nome]));
-      for (const f of j.fotos) {
-        const b = document.createElement("button");
-        b.type = "button"; b.className = "gl-item";
-        const legenda = `Dia ${f.dia} · ${nomeDia[f.dia] || ""}${f.uf ? " · " + f.uf : ""}`;
-        b.setAttribute("aria-label", `Abrir foto: ${legenda}`);
-        const img = document.createElement("img");
-        img.loading = "lazy"; img.alt = legenda; if (f.thumb) img.src = f.thumb;
-        const tag = document.createElement("span");
-        tag.className = "gl-tag"; tag.textContent = `Dia ${f.dia}${f.uf ? " · " + f.uf : ""}`;
-        b.append(img, tag);
-        b.addEventListener("click", () => abrirVisor(f, legenda));
-        $("gl-grade").appendChild(b);
-      }
-      gl.pular += j.fotos.length;
-      $("gl-total").textContent = j.total ? `${fmt.format(j.total)} ${j.total === 1 ? "foto" : "fotos"}` : "";
-      $("gl-status").textContent = j.total ? "" : (gl.dia ? "Ainda não tem fotos deste dia." : "Ainda não tem fotos na galeria — tire a sua e envie para o álbum! 🧡");
-      $("gl-mais").hidden = gl.pular >= j.total;
-    } catch (e) {
-      console.warn("Galeria:", e);
-      $("gl-status").textContent = "⚠️ A galeria não carregou: " + e.message + ".";
-    } finally {
-      gl.carregando = false;
-    }
-  }
-  async function abrirVisor(f, legenda) {
-    const img = $("visor-img");
-    img.src = f.thumb || ""; img.alt = legenda;
-    $("visor-legenda").textContent = legenda;
-    $("visor").hidden = false;
-    try {
-      const r = await fetch(`${urlDrive()}?acao=foto&id=${encodeURIComponent(f.id)}`);
-      const j = await r.json();
-      if (j.ok && j.imagem && !$("visor").hidden) img.src = j.imagem;
-    } catch (e) { /* fica com a miniatura */ }
-  }
-  function fecharVisor() { $("visor").hidden = true; $("visor-img").src = ""; }
 
   // ---------------------------------------------------------------- estado / região
   let aposLocal = null;
@@ -720,10 +641,6 @@
     $("compartilhar").addEventListener("click", compartilhar);
     $("album-ok").addEventListener("change", (e) => { if (!st.albumEnviado) $("album-enviar").disabled = !e.target.checked; });
     $("album-enviar").addEventListener("click", enviarAlbum);
-    $("gl-mais").addEventListener("click", () => montarGaleria(false));
-    $("visor-fechar").addEventListener("click", fecharVisor);
-    $("visor").addEventListener("click", (e) => { if (e.target.id === "visor") fecharVisor(); });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("visor").hidden) fecharVisor(); });
     $("refazer").addEventListener("click", voltarParaCamera);
     $("refazer-topo").addEventListener("click", voltarParaCamera);
     document.addEventListener("visibilitychange", () => {
