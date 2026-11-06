@@ -503,7 +503,8 @@
           imagem: await paraBase64(st.resultadoFile),
         }),
       });
-      const j = await resp.json().catch(() => ({ ok: resp.ok }));
+      // Só conta como enviado se o script responder {"ok":true} (uma tela de login do Google não serve).
+      const j = await resp.json().catch(() => ({ ok: false, erro: "resposta inesperada" }));
       if (!j.ok) throw new Error(j.erro || "falha");
       st.albumEnviado = true;
       botao.textContent = "✅ Foto enviada para o álbum!";
