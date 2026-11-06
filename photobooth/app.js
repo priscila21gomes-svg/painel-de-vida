@@ -461,7 +461,7 @@
     const podeCompartilhar = !!(navigator.canShare && navigator.canShare({ files: [st.resultadoFile] }));
     $("compartilhar").hidden = !podeCompartilhar;
     baixar.className = "btn " + (podeCompartilhar ? "btn-claro" : "btn-amarelo");
-    $("dica-salvar").hidden = !isIOS;
+    $("dica-salvar").hidden = false;
     const local = Aderencia.localAtual();
     if (local) Aderencia.registrar(st.dia.dia, local.uf);
     prepararAlbum();
@@ -472,8 +472,7 @@
   const urlDrive = () => (CFG.drive && CFG.drive.urlScript) || "";
   function prepararAlbum() {
     $("album").hidden = !urlDrive();
-    $("album-ok").checked = false;
-    $("album-enviar").disabled = true;
+    $("album-enviar").disabled = false;
     $("album-enviar").textContent = "📤 Enviar para o álbum da campanha";
     $("album-enviar").classList.remove("enviado");
     $("album-status").textContent = "";
@@ -486,7 +485,7 @@
     r.readAsDataURL(blob);
   });
   async function enviarAlbum() {
-    if (!st.resultadoFile || st.albumEnviado || !$("album-ok").checked) return;
+    if (!st.resultadoFile || st.albumEnviado) return;
     const local = Aderencia.localAtual();
     const botao = $("album-enviar");
     botao.disabled = true;
@@ -518,6 +517,21 @@
   }
 
   const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  // No iPhone o download vai para o app Arquivos; pelo menu do celular dá para escolher
+  // "Salvar imagem" e a foto vai direto para a galeria de Fotos.
+  async function salvarNoCelular(e) {
+    if (!st.resultadoFile) return;
+    const podeMenu = !!(navigator.canShare && navigator.canShare({ files: [st.resultadoFile] }));
+    if (!(isIOS && podeMenu)) return; // Android/computador: segue o download normal do link
+    e.preventDefault();
+    try {
+      await navigator.share({ files: [st.resultadoFile] });
+    } catch (erro) {
+      if (erro && erro.name === "AbortError") return; // a pessoa fechou o menu
+      window.open(st.resultadoURL, "_blank"); // último recurso: abre a foto para tocar e segurar
+    }
+  }
 
   async function compartilhar() {
     if (!st.resultadoFile) return;
@@ -639,7 +653,7 @@
     $("galeria").addEventListener("change", (e) => { lerGaleria(e.target.files[0]); e.target.value = ""; });
     $("usar-foto").addEventListener("click", () => { if (st.still) gerarResultado(st.still, false); });
     $("compartilhar").addEventListener("click", compartilhar);
-    $("album-ok").addEventListener("change", (e) => { if (!st.albumEnviado) $("album-enviar").disabled = !e.target.checked; });
+    $("baixar").addEventListener("click", salvarNoCelular);
     $("album-enviar").addEventListener("click", enviarAlbum);
     $("refazer").addEventListener("click", voltarParaCamera);
     $("refazer-topo").addEventListener("click", voltarParaCamera);
