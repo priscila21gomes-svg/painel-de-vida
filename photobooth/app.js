@@ -113,11 +113,17 @@
     if (recomecar) { gl.pular = 0; $("gl-grade").innerHTML = ""; }
     $("gl-status").textContent = "Carregando fotos…";
     $("gl-mais").hidden = true;
+    $("gl-secao").hidden = false;
     try {
-      const r = await fetch(`${url}?acao=galeria&dia=${gl.dia}&pular=${gl.pular}&limite=${POR_PAGINA}`);
-      const j = await r.json();
-      if (!j.ok || !Array.isArray(j.fotos)) throw new Error("sem galeria");
-      $("gl-secao").hidden = false;
+      let r;
+      try {
+        r = await fetch(`${url}?acao=galeria&dia=${gl.dia}&pular=${gl.pular}&limite=${POR_PAGINA}`);
+      } catch (e) { throw new Error("o navegador não conseguiu falar com o script do Google (rede ou bloqueio)"); }
+      const texto = await r.text();
+      let j;
+      try { j = JSON.parse(texto); } catch (e) { throw new Error("o script respondeu uma página em vez de dados — confira se a implantação está como 'Qualquer pessoa'"); }
+      if (!j.ok) throw new Error("o script deu erro: " + (j.erro || "desconhecido"));
+      if (!Array.isArray(j.fotos)) throw new Error("o script ainda é a versão antiga — implante a nova versão (Gerenciar implantações → Nova versão)");
       montarFiltrosGaleria();
       const nomeDia = Object.fromEntries(CFG.dias.map((d) => [d.dia, d.nome]));
       for (const f of j.fotos) {
@@ -138,8 +144,8 @@
       $("gl-status").textContent = j.total ? "" : (gl.dia ? "Ainda não tem fotos deste dia." : "Ainda não tem fotos na galeria — tire a sua e envie para o álbum! 🧡");
       $("gl-mais").hidden = gl.pular >= j.total;
     } catch (e) {
-      // Script antigo (sem galeria) ou fora do ar: deixa a seção escondida se ainda não apareceu.
-      $("gl-status").textContent = $("gl-secao").hidden ? "" : "Não foi possível carregar a galeria agora.";
+      console.warn("Galeria:", e);
+      $("gl-status").textContent = "⚠️ A galeria não carregou: " + e.message + ".";
     } finally {
       gl.carregando = false;
     }
