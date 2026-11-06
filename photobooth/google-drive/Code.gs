@@ -1,5 +1,5 @@
 /**
- * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 4: com galeria)
+ * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 5: com galeria e importação das fotos antigas)
  * ------------------------------------------------------------
  * Recebe a foto enviada pelo site (quando a pessoa toca em
  * "Enviar para o álbum da campanha") e salva numa pasta do Drive,
@@ -85,7 +85,7 @@ function falhou(id, motivo) {
 //   ?acao=status&id=...&callback=fn → responde fn({...}) dizendo se a foto chegou
 function doGet(e) {
   const p = (e && e.parameter) || {};
-  let corpo = { ok: true, servico: "photobooth-drive", versao: 4 };
+  let corpo = { ok: true, servico: "photobooth-drive", versao: 5 };
   if (p.acao === "galeria") {
     try { corpo = galeria(p); } catch (erro) { corpo = { ok: false, erro: String(erro) }; }
   } else if (p.acao === "status") {
@@ -135,12 +135,64 @@ function galeria(p) {
   const fotos = lista.slice(0, limite).map(function (f) {
     let img = cache.get("pv_" + f.id);
     if (!img) {
-      img = "data:image/jpeg;base64," + Utilities.base64Encode(DriveApp.getFileById(f.id).getBlob().getBytes());
+      const blob = DriveApp.getFileById(f.id).getBlob();
+      img = "data:" + (blob.getContentType() || "image/jpeg") + ";base64," + Utilities.base64Encode(blob.getBytes());
       try { cache.put("pv_" + f.id, img, 21600); } catch (e) { /* imagem grande demais para o cache */ }
     }
     return { dia: f.dia, uf: f.uf, t: f.t, img: img };
   });
   return { ok: true, total: lista.length, fotos: fotos };
+}
+
+// ------------------------------------------------------------------ FOTOS ANTIGAS
+// Rode UMA VEZ pelo editor (escolha "importarFotosAntigas" lá em cima e clique em Executar).
+// Cria a cópia leve das fotos que já estavam no Drive antes da galeria existir.
+// Se tiver muitas fotos e aparecer "tempo esgotado", é só rodar de novo: ele continua de onde parou.
+function importarFotosAntigas() {
+  const inicio = Date.now();
+  const previas = pastaPrevias();
+  const jaTem = {};
+  const existentes = previas.getFiles();
+  while (existentes.hasNext()) jaTem[existentes.next().getName()] = true;
+
+  let criadas = 0, puladas = 0, falhas = 0;
+  for (let dia = 1; dia <= 7; dia++) {
+    const arquivos = pastaDoDia(dia).getFilesByType(MimeType.JPEG);
+    while (arquivos.hasNext()) {
+      if (Date.now() - inicio > 5 * 60 * 1000) { // para antes do limite de 6 min do Google
+        Logger.log("Pausado por tempo. Criadas: " + criadas + ". Rode de novo para continuar.");
+        CacheService.getScriptCache().remove("galeria_lista");
+        return;
+      }
+      const f = arquivos.next();
+      if (f.isTrashed() || jaTem[f.getName()]) { puladas++; continue; }
+      try {
+        previas.createFile(miniatura(f).setName(f.getName()));
+        jaTem[f.getName()] = true;
+        criadas++;
+      } catch (e) {
+        falhas++;
+        Logger.log("Falhou: " + f.getName() + " — " + e);
+      }
+    }
+  }
+  CacheService.getScriptCache().remove("galeria_lista");
+  Logger.log("Pronto! Cópias criadas: " + criadas + " · já existiam: " + puladas + " · falhas: " + falhas);
+}
+
+// Miniatura de ~300 px de largura gerada pelo próprio Google Drive.
+function miniatura(arquivo) {
+  try {
+    const r = UrlFetchApp.fetch("https://drive.google.com/thumbnail?sz=w300&id=" + arquivo.getId(), {
+      headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true,
+    });
+    const tipo = String(r.getHeaders()["Content-Type"] || "");
+    if (r.getResponseCode() === 200 && tipo.indexOf("image/") === 0) return r.getBlob();
+  } catch (e) { /* tenta o plano B */ }
+  const t = arquivo.getThumbnail(); // plano B: miniatura menor
+  if (!t) throw new Error("o Drive ainda não gerou a miniatura desta foto");
+  return t;
 }
 
 function pastaDoDia(dia) {
