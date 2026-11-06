@@ -1,7 +1,6 @@
 # Álbum da campanha no Google Drive — como ativar (≈ 5 minutos)
 
-As fotos só são enviadas quando a pessoa marca **"Autorizo o uso da minha imagem…"** e toca em
-**"Enviar para o álbum da campanha"**. Elas caem na pasta **Photobooth Peak Season** do Drive,
+As fotos só são enviadas quando a pessoa toca em **"Enviar para o álbum da campanha"**. Elas caem na pasta **Photobooth Peak Season** do Drive,
 separadas por dia.
 
 > Dica: use uma conta Google só da campanha (ou um Drive do Google Workspace da empresa).
@@ -38,13 +37,10 @@ drive: {
 
 Publique o site de novo. O bloco de autorização + botão aparece na tela da foto pronta.
 
-## Galeria no site
-A seção **📸 Galeria** da página inicial mostra as fotos enviadas (mais recentes primeiro, com filtro por dia).
-- As miniaturas e as fotos são entregues pelo próprio script — **não é preciso compartilhar a pasta** no Drive.
-- O script só entrega arquivos que estão nas pastas da campanha.
-- **Tirar uma foto da galeria:** apague o arquivo no Drive (some em até 1 minuto).
-- **Moderação antes de publicar:** no `Code.gs`, troque `SO_COM_ESTRELA = false` por `true`.
-  Aí só aparecem as fotos que você marcar com ⭐ no Drive.
+## Conferir se está tudo certo
+Abra a URL do script (a que termina em `/exec`) numa aba anônima. Deve aparecer:
+`{"ok":true,"servico":"photobooth-drive","versao":3}`
+Se não aparecer `"versao":3`, a versão nova ainda não foi implantada (veja abaixo).
 
 ## Se mudar o código do script depois
 Use **Implantar → Gerenciar implantações → editar (lápis) → Versão: Nova versão → Implantar**.

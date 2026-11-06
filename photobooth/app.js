@@ -484,6 +484,23 @@
     r.onerror = erro;
     r.readAsDataURL(blob);
   });
+  // Pergunta ao script por <script> (JSONP): o navegador não bloqueia, mesmo sem CORS.
+  function perguntarScript(params, tempoMax = 8000) {
+    return new Promise((ok, erro) => {
+      const cb = "pbcb_" + Math.random().toString(36).slice(2);
+      const tag = document.createElement("script");
+      const limpar = () => { clearTimeout(timer); delete window[cb]; tag.remove(); };
+      const timer = setTimeout(() => { limpar(); erro(new Error("sem resposta")); }, tempoMax);
+      window[cb] = (dados) => { limpar(); ok(dados); };
+      tag.onerror = () => { limpar(); erro(new Error("script não carregou")); };
+      // Carregou mas não chamou a função de retorno: é o script antigo (responde JSON puro).
+      tag.onload = () => setTimeout(() => { if (window[cb]) { limpar(); erro(new Error("versao-antiga")); } }, 50);
+      tag.src = `${urlDrive()}?${new URLSearchParams({ ...params, callback: cb, _: Date.now() })}`;
+      document.head.appendChild(tag);
+    });
+  }
+  const novoId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`);
+
   async function enviarAlbum() {
     if (!st.resultadoFile || st.albumEnviado) return;
     const local = Aderencia.localAtual();
@@ -491,20 +508,35 @@
     botao.disabled = true;
     botao.textContent = "⏳ Enviando…";
     $("album-status").textContent = "";
+    const id = novoId();
     try {
-      const resp = await fetch(urlDrive(), {
+      // 1) Envia sem ler a resposta (modo no-cors): o navegador não bloqueia esse envio.
+      await fetch(urlDrive(), {
         method: "POST",
-        // text/plain evita a checagem extra de CORS que o Apps Script não responde.
+        mode: "no-cors",
         body: JSON.stringify({
+          id,
           dia: st.dia.dia,
           uf: local ? local.uf : "",
           autorizado: true,
           imagem: await paraBase64(st.resultadoFile),
         }),
       });
-      // Só conta como enviado se o script responder {"ok":true} (uma tela de login do Google não serve).
-      const j = await resp.json().catch(() => ({ ok: false, erro: "resposta inesperada" }));
-      if (!j.ok) throw new Error(j.erro || "falha");
+      // 2) Confirma com o script se a foto foi salva no Drive.
+      botao.textContent = "⏳ Confirmando…";
+      let r = null;
+      for (const pausa of [500, 1000, 1500, 2500, 4000]) {
+        await esperar(pausa);
+        let falha = null;
+        r = await perguntarScript({ acao: "status", id }).catch((e) => { falha = e; return null; });
+        if (falha && falha.message === "versao-antiga") {
+          throw new Error("O álbum precisa ser atualizado (versão nova do script no Google).");
+        }
+        if (r && r.status !== "aguardando") break;
+      }
+      if (!r) throw new Error("O álbum não respondeu. Confira a internet e tente de novo.");
+      if (r.status === "erro") throw new Error("O álbum recusou a foto (" + (r.erro || "erro") + ").");
+      if (r.status !== "salva") throw new Error("Não conseguimos confirmar o envio. Tente de novo.");
       st.albumEnviado = true;
       botao.textContent = "✅ Foto enviada para o álbum!";
       botao.classList.add("enviado");
@@ -512,7 +544,7 @@
     } catch (e) {
       botao.disabled = false;
       botao.textContent = "📤 Tentar enviar de novo";
-      $("album-status").textContent = "Não deu certo agora. Confira a internet e tente de novo.";
+      $("album-status").textContent = (e && e.message && !/fetch/i.test(e.message)) ? e.message : "Não deu certo agora. Confira a internet e tente de novo.";
     }
   }
 
