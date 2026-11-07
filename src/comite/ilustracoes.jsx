@@ -170,10 +170,6 @@ function Presente() {
   );
 }
 
-function MascoteCapa() {
-  return <image href={MASCOTE} x="22" y="2" width="76" height="86" preserveAspectRatio="xMidYMid meet" />;
-}
-
 export const ILUSTRACOES = {
   laco: { label: "Laço rosa", fundo: "#FDE7F0", C: Laco },
   criancas: { label: "Crianças", fundo: "#FFF1D6", C: Criancas },
@@ -183,7 +179,6 @@ export const ILUSTRACOES = {
   templates: { label: "Templates", fundo: "#FFF7DB", C: Templates },
   operacional: { label: "Checklist", fundo: "#E6F0FF", C: Operacional },
   presente: { label: "Presente", fundo: "#FFEDE6", C: Presente },
-  mascote: { label: "Mascote", fundo: "#FFF1EC", C: MascoteCapa },
 };
 
 export function ilustracaoPadrao(nome = "") {
@@ -195,8 +190,7 @@ export function ilustracaoPadrao(nome = "") {
   if (n.includes("comunica")) return "megafone";
   if (n.includes("template") || n.includes("modelo")) return "templates";
   if (n.includes("rmr") || n.includes("operac") || n.includes("checklist")) return "operacional";
-  if (n.includes("outro")) return "mascote";
-  return "presente";
+    return "presente";
 }
 
 export function Ilustracao({ id, className = "", style }) {

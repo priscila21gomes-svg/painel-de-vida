@@ -3,22 +3,29 @@ import {
   CalendarCheck, Calendar as CalendarIcon, FolderOpen, ClipboardList, ListChecks, Lightbulb,
   Home, Plus, Search, Bell, ChevronLeft, ChevronRight, ChevronDown, X, Trash2, Pencil,
   Download, Link as LinkIcon, Upload, Star, Check, Clock, MapPin, User, Users,
-  Loader2, Heart, Folder, Cloud, CloudOff, ExternalLink, FileText, Image as ImageIcon,
+  Loader2, Heart, Folder, Play, RotateCcw, Cloud, CloudOff, ExternalLink, FileText, Image as ImageIcon,
 } from "lucide-react";
 import { carregarComite, salvarComite, sincronizaNaNuvem } from "./storage.js";
 import { Mascote, MascoteRosto, Ilustracao, ILUSTRACOES, ilustracaoPadrao } from "./ilustracoes.jsx";
 
-// ---------- tema Shopee ----------
+// ---------- tema: bege com bolinhas + laranja Shopee suavizado ----------
 const S = {
-  laranja: "#EE4D2D",
-  laranja2: "#FF7337",
-  laranjaClaro: "#FFF1EC",
-  laranjaBorda: "#FFD6C8",
-  branco: "#FFFFFF",
-  fundo: "#F7F7F8",
-  tinta: "#222222",
-  tintaSuave: "#757575",
-  linha: "#ECECEC",
+  laranja: "#EE6A3F",
+  laranja2: "#F59A6B",
+  laranjaClaro: "#FDECE0",
+  laranjaBorda: "#F6D3BD",
+  branco: "#FFFDF9",
+  fundo: "#F8F1E7",
+  tinta: "#4A3A33",
+  tintaSuave: "#8E7D73",
+  linha: "#EEE2D3",
+};
+const FONTE_TITULO = "'Playfair Display', Georgia, serif";
+const FONTE_MAO = "'Caveat', 'Comic Sans MS', cursive";
+const FUNDO_BOLINHAS = {
+  backgroundColor: S.fundo,
+  backgroundImage: "radial-gradient(#E6D5C2 1.3px, transparent 1.4px)",
+  backgroundSize: "22px 22px",
 };
 
 const TIPOS = [
@@ -32,11 +39,11 @@ const TIPOS = [
 const tipoInfo = (id) => TIPOS.find((t) => t.id === id) || TIPOS[TIPOS.length - 1];
 
 const STATUS = [
-  { id: "a-fazer", label: "A fazer", cor: "#9CA3AF" },
-  { id: "andamento", label: "Em andamento", cor: "#F5A623" },
-  { id: "aprovacao", label: "Aguardando aprovação", cor: "#2F80ED" },
-  { id: "revisao", label: "Em revisão", cor: "#8B5CF6" },
-  { id: "concluida", label: "Concluída", cor: "#27AE60" },
+  { id: "a-fazer", label: "Não iniciado", cor: "#9B8AE0", fundo: "#EEEAFB", fita: "#DDD5F6" },
+  { id: "andamento", label: "Em andamento", cor: "#F0A15A", fundo: "#FDEEDF", fita: "#F9DCC2" },
+  { id: "aprovacao", label: "Aguardando aprovação", cor: "#6A9BE0", fundo: "#E5EFFB", fita: "#CFE1F6" },
+  { id: "revisao", label: "Em revisão", cor: "#E07A9B", fundo: "#FCE7EE", fita: "#F7D2DF" },
+  { id: "concluida", label: "Concluído", cor: "#5FBF8F", fundo: "#E3F3EA", fita: "#CBEAD8" },
 ];
 const statusInfo = (id) => STATUS.find((s) => s.id === id) || STATUS[0];
 
@@ -167,37 +174,43 @@ function estadoInicial() {
 // ---------- blocos de interface ----------
 function Card({ children, className = "", style }) {
   return (
-    <div className={`rounded-2xl ${className}`} style={{ background: S.branco, border: `1px solid ${S.linha}`, boxShadow: "0 2px 10px rgba(0,0,0,0.03)", ...style }}>
+    <div className={`rounded-2xl ${className}`} style={{ background: S.branco, border: `1px solid ${S.linha}`, boxShadow: "0 4px 18px rgba(120,90,60,0.06)", ...style }}>
       {children}
     </div>
   );
 }
 
-function TituloSecao({ icon: Icon, children, acao, sub }) {
+// "fita adesiva" com letra de mão, como etiqueta de caderno
+function Fita({ children, cor = S.laranjaClaro, ponto, contador, className = "", rot = -1.5 }) {
+  return (
+    <span className={`inline-flex items-center gap-2 px-3.5 py-1 ${className}`} style={{ background: cor, transform: `rotate(${rot}deg)`, borderRadius: 3, boxShadow: "0 1px 0 rgba(0,0,0,0.04)" }}>
+      {ponto && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ponto }} />}
+      <span className="text-2xl leading-none" style={{ fontFamily: FONTE_MAO, color: S.tinta }}>{children}</span>
+      {contador !== undefined && <span className="text-xs font-bold rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center" style={{ background: S.branco, color: S.tinta }}>{contador}</span>}
+    </span>
+  );
+}
+
+function TituloSecao({ children, acao, sub, cor }) {
   return (
     <div className="flex items-start justify-between gap-3 mb-3">
-      <div className="flex items-start gap-2.5 min-w-0">
-        <Icon size={20} color={S.laranja} className="shrink-0 mt-0.5" />
-        <div className="min-w-0">
-          <h3 className="text-sm font-extrabold uppercase tracking-wide" style={{ color: S.laranja }}>{children}</h3>
-          {sub && <p className="text-xs" style={{ color: S.tintaSuave }}>{sub}</p>}
-        </div>
+      <div className="min-w-0">
+        <Fita cor={cor}>{children}</Fita>
+        {sub && <p className="text-xs mt-1.5 ml-1" style={{ color: S.tintaSuave }}>{sub}</p>}
       </div>
       {acao}
     </div>
   );
 }
 
-function CabecalhoPagina({ icon: Icon, titulo, sub, acao }) {
+function CabecalhoPagina({ emoji, titulo, sub, acao }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: S.laranja, color: "#fff" }}>
-          <Icon size={22} />
-        </div>
+        {emoji && <span className="text-4xl">{emoji}</span>}
         <div>
-          <h2 className="text-lg font-extrabold uppercase tracking-wide" style={{ color: S.tinta }}>{titulo}</h2>
-          {sub && <p className="text-sm" style={{ color: S.tintaSuave }}>{sub}</p>}
+          <h2 className="text-3xl sm:text-4xl italic font-bold leading-tight" style={{ color: S.tinta, fontFamily: FONTE_TITULO }}>{titulo}</h2>
+          {sub && <p className="text-sm mt-1" style={{ color: S.tintaSuave }}>{sub}</p>}
         </div>
       </div>
       {acao}
@@ -280,10 +293,10 @@ function Modal({ titulo, onFechar, children, largura = 520 }) {
   );
 }
 
-function SelectResponsavel({ value, onChange, membros, vazio = "Sem responsável" }) {
+function SelectResponsavel({ value, onChange, membros, vazio = "Sem responsável", className = "" }) {
   const nomes = membros.map((m) => m.nome);
   return (
-    <Select value={value || ""} onChange={(e) => onChange(e.target.value)}>
+    <Select value={value || ""} onChange={(e) => onChange(e.target.value)} className={className}>
       <option value="">{vazio}</option>
       {nomes.map((n) => <option key={n} value={n}>{n}</option>)}
       {value && !nomes.includes(value) && <option value={value}>{value}</option>}
@@ -864,7 +877,7 @@ function AbaMateriais({ state, update, pastaAberta, setPastaAberta, busca }) {
 
   return (
     <div>
-      <CabecalhoPagina icon={FolderOpen} titulo="Materiais Regionais" sub="Todo o conteúdo regional disponível para download, organizado por campanha."
+      <CabecalhoPagina emoji="📁" titulo="Materiais Regionais" sub="Todo o conteúdo regional disponível para download, organizado por campanha."
         acao={<BotaoPrimario onClick={() => setModalPasta({ id: uid(), nome: "", descricao: "", link: "", cor: CORES_PASTA[state.pastas.length % CORES_PASTA.length], destaque: false, arquivos: [], novo: true })}><Plus size={16} /> Nova pasta</BotaoPrimario>} />
       {termo && <p className="text-sm mb-3" style={{ color: S.tintaSuave }}>Filtrando por “{busca}”</p>}
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
@@ -887,7 +900,7 @@ function AbaMateriais({ state, update, pastaAberta, setPastaAberta, busca }) {
 }
 
 // ---------- demandas ----------
-function Equipe({ state, update }) {
+function Equipe({ state, update, semCard }) {
   const [nome, setNome] = useState("");
   const add = () => {
     const n = nome.trim();
@@ -897,8 +910,8 @@ function Equipe({ state, update }) {
   };
   const carga = (n) => state.demandas.filter((d) => d.responsavel === n && d.status !== "concluida").length;
   return (
-    <Card className="p-4">
-      <TituloSecao icon={Users} sub="Quem pode ser responsável pelas demandas">Equipe do comitê</TituloSecao>
+    <Card className={semCard ? "" : "p-4"} style={semCard ? { border: "none", boxShadow: "none", background: "transparent" } : undefined}>
+      {!semCard && <TituloSecao cor="#F9DCC2" sub="Quem pode ser responsável pelas demandas">equipe do comitê ♡</TituloSecao>}
       <div className="flex flex-col gap-1.5 mb-3">
         {state.membros.map((m) => (
           <div key={m.id} className="flex items-center gap-2.5">
@@ -917,87 +930,165 @@ function Equipe({ state, update }) {
   );
 }
 
-function AbaDemandas({ state, update, abrirDemanda, novaDemanda, busca }) {
-  const [filtroStatus, setFiltroStatus] = useState("abertas");
+function CardDemanda({ d, state, abrirDemanda, mover, excluir, arrastando, setArrastando }) {
+  const st = statusInfo(d.status);
+  const pr = prioridadeInfo(d.prioridade);
+  const feita = d.status === "concluida";
+  const atrasada = !feita && d.prazo && d.prazo < hojeISO();
+  const u = !feita ? urgencia(d.prazo) : null;
+  const ev = d.eventoId && state.eventos.find((e) => e.id === d.eventoId);
+  const idx = STATUS.findIndex((x) => x.id === d.status);
+  const proximo = STATUS[Math.min(idx + 1, STATUS.length - 2)];
+  const Acao = ({ titulo, onClick, children }) => (
+    <button onClick={onClick} title={titulo} aria-label={titulo} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/70 transition-colors" style={{ color: S.tintaSuave }}>{children}</button>
+  );
+  return (
+    <div
+      draggable
+      onDragStart={(e) => { e.dataTransfer.setData("text/plain", d.id); setArrastando(d.id); }}
+      onDragEnd={() => setArrastando(null)}
+      className="rounded-2xl p-4 cursor-grab active:cursor-grabbing transition-all hover:-translate-y-0.5"
+      style={{ background: st.fundo, opacity: arrastando === d.id ? 0.45 : 1, boxShadow: "0 2px 8px rgba(120,90,60,0.06)" }}
+    >
+      <button onClick={() => abrirDemanda(d)} className="text-left w-full">
+        <p className="text-[15px] font-semibold leading-snug" style={{ color: feita ? "#7FA892" : S.tinta, textDecoration: feita ? "line-through" : "none" }}>{d.titulo}</p>
+        {ev && <p className="text-xs mt-1 flex items-center gap-1" style={{ color: S.tintaSuave }}><CalendarIcon size={11} /> {ev.titulo}</p>}
+      </button>
+      <div className="flex flex-wrap items-center gap-1.5 mt-3">
+        {d.responsavel ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-semibold" style={{ background: S.branco, color: S.tinta }}>
+            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: st.fita, color: S.tinta }}>{iniciais(d.responsavel)[0]}</span>
+            {d.responsavel.split(" ")[0]}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs" style={{ background: S.branco, color: S.tintaSuave }}><User size={11} /> sem responsável</span>
+        )}
+        {d.prazo && (
+          <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold" style={atrasada ? { background: "#E8828F", color: "#fff" } : { background: S.branco, color: u && u.cor !== S.tintaSuave ? u.cor : S.tintaSuave }}>
+            {atrasada ? `Atrasada · ${fmtCurta(d.prazo)}` : u && u.cor !== S.tintaSuave ? `${u.label} · ${fmtCurta(d.prazo)}` : fmtCurta(d.prazo)}
+          </span>
+        )}
+        {d.prioridade === "alta" && !feita && <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: S.branco, color: pr.cor }}>● urgente</span>}
+      </div>
+      <div className="flex items-center justify-end gap-0.5 mt-2 -mr-1">
+        {feita ? (
+          <Acao titulo="Reabrir" onClick={() => mover(d.id, "a-fazer")}><RotateCcw size={15} /></Acao>
+        ) : (
+          d.status !== proximo.id && <Acao titulo={`Mover para “${proximo.label}”`} onClick={() => mover(d.id, proximo.id)}><Play size={15} fill="currentColor" /></Acao>
+        )}
+        {!feita && <Acao titulo="Concluir" onClick={() => mover(d.id, "concluida")}><Check size={16} /></Acao>}
+        <Acao titulo="Editar" onClick={() => abrirDemanda(d)}><Pencil size={14} /></Acao>
+        <Acao titulo="Excluir" onClick={() => excluir(d.id)}><X size={16} /></Acao>
+      </div>
+    </div>
+  );
+}
+
+function AbaDemandas({ state, update, abrirDemanda, busca }) {
   const [filtroResp, setFiltroResp] = useState("");
+  const [arrastando, setArrastando] = useState(null);
+  const [sobre, setSobre] = useState(null);
+  const [verEquipe, setVerEquipe] = useState(false);
+  const [rapida, setRapida] = useState({ titulo: "", prazo: "", responsavel: state.usuario || "", status: "a-fazer" });
   const termo = busca.trim().toLowerCase();
 
-  const lista = state.demandas
-    .filter((d) => (filtroStatus === "todas" ? true : filtroStatus === "abertas" ? d.status !== "concluida" : d.status === filtroStatus))
+  const visiveis = state.demandas
     .filter((d) => (filtroResp === "__eu" ? d.responsavel === state.usuario : filtroResp ? d.responsavel === filtroResp : true))
-    .filter((d) => !termo || d.titulo.toLowerCase().includes(termo) || (d.responsavel || "").toLowerCase().includes(termo))
-    .sort((a, b) => (a.prazo || "9999").localeCompare(b.prazo || "9999"));
+    .filter((d) => !termo || d.titulo.toLowerCase().includes(termo) || (d.responsavel || "").toLowerCase().includes(termo));
 
-  const mudarStatus = (id, status) => update((s) => ({ ...s, demandas: s.demandas.map((d) => (d.id === id ? { ...d, status } : d)) }));
-  const mudarResp = (id, responsavel) => update((s) => ({ ...s, demandas: s.demandas.map((d) => (d.id === id ? { ...d, responsavel } : d)) }));
+  const mover = (id, status) => update((s) => ({ ...s, demandas: s.demandas.map((d) => (d.id === id ? { ...d, status } : d)) }));
+  const excluir = (id) => window.confirm("Excluir esta demanda?") && update((s) => ({ ...s, demandas: s.demandas.filter((d) => d.id !== id) }));
+  const adicionar = () => {
+    if (!rapida.titulo.trim()) return;
+    update((s) => ({ ...s, demandas: [...s.demandas, { id: uid(), titulo: rapida.titulo.trim(), descricao: "", responsavel: rapida.responsavel, solicitante: s.usuario || "", prazo: rapida.prazo, status: rapida.status, prioridade: "media", eventoId: "", criadaEm: hojeISO() }] }));
+    setRapida((r) => ({ ...r, titulo: "", prazo: "" }));
+  };
+
+  const total = state.demandas.length;
+  const andamento = state.demandas.filter((d) => d.status === "andamento").length;
+  const atrasadas = state.demandas.filter((d) => d.status !== "concluida" && d.prazo && d.prazo < hojeISO()).length;
+  const pct = total ? Math.round((state.demandas.filter((d) => d.status === "concluida").length / total) * 100) : 0;
+  const kpis = [
+    { valor: total, label: "Demandas", fundo: "#EEEAFB", cor: "#7C6BC9" },
+    { valor: andamento, label: "Em andamento", fundo: "#FDEEDF", cor: "#D9822B" },
+    { valor: atrasadas, label: "Atrasadas", fundo: "#FCE7EE", cor: "#D9607F" },
+    { valor: `${pct}%`, label: "Concluído", fundo: "#E3F3EA", cor: "#3F9A6C", barra: pct },
+  ];
 
   return (
     <div>
-      <CabecalhoPagina icon={ClipboardList} titulo="Demandas" sub="Controle de demandas do comitê — quem faz o quê e até quando." acao={<BotaoPrimario onClick={novaDemanda}><Plus size={16} /> Nova demanda</BotaoPrimario>} />
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
-        {STATUS.map((s) => {
-          const n = state.demandas.filter((d) => d.status === s.id).length;
-          const ativo = filtroStatus === s.id;
-          return (
-            <button key={s.id} onClick={() => setFiltroStatus(ativo ? "abertas" : s.id)} className="rounded-xl px-3 py-3 text-left transition-shadow hover:shadow" style={{ background: ativo ? s.cor : S.branco, border: `1px solid ${ativo ? s.cor : S.linha}` }}>
-              <p className="text-2xl font-extrabold" style={{ color: ativo ? "#fff" : s.cor }}>{n}</p>
-              <p className="text-xs font-semibold" style={{ color: ativo ? "#fff" : S.tintaSuave }}>{s.label}</p>
-            </button>
-          );
-        })}
+      <div className="flex flex-wrap items-start justify-between gap-5 mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-5xl">📋</span>
+          <div>
+            <h2 className="text-4xl sm:text-5xl italic font-bold leading-tight" style={{ color: S.tinta, fontFamily: FONTE_TITULO }}>Quadro de Demandas</h2>
+            <p className="text-sm mt-1" style={{ color: S.tintaSuave }}>Tarefas, prazos e responsáveis do comitê, tudo num lugar só.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
+          {kpis.map((k) => (
+            <div key={k.label} className="rounded-2xl px-5 py-3 min-w-[130px]" style={{ background: k.fundo, border: `1px solid ${S.branco}` }}>
+              <p className="text-3xl italic font-bold" style={{ color: k.cor, fontFamily: FONTE_TITULO }}>{k.valor}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mt-0.5" style={{ color: S.tintaSuave }}>{k.label}</p>
+              {k.barra !== undefined && <div className="h-1.5 rounded-full mt-1.5 overflow-hidden" style={{ background: "#F3DDE3" }}><div className="h-full rounded-full" style={{ width: `${k.barra}%`, background: "#7CCB9F" }} /></div>}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
-        <Card className="p-4">
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
-              <option value="abertas">Abertas</option>
-              <option value="todas">Todas</option>
-              {STATUS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-            </Select>
-            <Select value={filtroResp} onChange={(e) => setFiltroResp(e.target.value)}>
-              <option value="">Todos os responsáveis</option>
-              {state.usuario && <option value="__eu">Minhas demandas</option>}
-              {state.membros.map((m) => <option key={m.id} value={m.nome}>{m.nome}</option>)}
-            </Select>
-          </div>
+      {/* nova demanda rápida */}
+      <div className="relative mb-6 pt-4">
+        <Fita cor="#F7D2DF" className="absolute top-0 left-6 z-10" rot={-3}>nova demanda ♡</Fita>
+        <div className="rounded-3xl p-4 pt-6 flex flex-col lg:flex-row gap-2.5" style={{ background: S.branco, border: `1px solid ${S.linha}`, boxShadow: "0 4px 18px rgba(120,90,60,0.06)" }}>
+          <Input value={rapida.titulo} onChange={(e) => setRapida({ ...rapida, titulo: e.target.value })} onKeyDown={(e) => e.key === "Enter" && adicionar()} placeholder="Nova demanda… ex.: Criar arte do Evento PET" className="flex-1 !py-3 !rounded-xl" />
+          <Input type="date" value={rapida.prazo} onChange={(e) => setRapida({ ...rapida, prazo: e.target.value })} className="lg:w-[160px] !py-3 !rounded-xl" title="Prazo" />
+          <div className="lg:w-[190px]"><SelectResponsavel value={rapida.responsavel} onChange={(v) => setRapida({ ...rapida, responsavel: v })} membros={state.membros} className="w-full !py-3 !rounded-xl" /></div>
+          <Select value={rapida.status} onChange={(e) => setRapida({ ...rapida, status: e.target.value })} className="lg:w-[190px] !py-3 !rounded-xl">
+            {STATUS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+          </Select>
+          <button onClick={adicionar} className="rounded-full px-7 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90" style={{ background: "#E07A9B" }}>Adicionar</button>
+        </div>
+      </div>
 
-          {lista.length === 0 && <div className="flex flex-col items-center py-6"><Mascote size={100} /><p className="text-sm" style={{ color: S.tintaSuave }}>Nenhuma demanda com esses filtros.</p></div>}
-          <div className="flex flex-col gap-2">
-            {lista.map((d) => {
-              const st = statusInfo(d.status);
-              const pr = prioridadeInfo(d.prioridade);
-              const u = d.status !== "concluida" ? urgencia(d.prazo) : null;
-              const ev = d.eventoId && state.eventos.find((e) => e.id === d.eventoId);
-              return (
-                <div key={d.id} className="rounded-xl p-3 flex flex-col md:flex-row md:items-center gap-3" style={{ border: `1px solid ${S.linha}`, borderLeft: `4px solid ${pr.cor}` }}>
-                  <button onClick={() => abrirDemanda(d)} className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-bold" style={{ color: S.tinta, textDecoration: d.status === "concluida" ? "line-through" : "none" }}>{d.titulo}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <Chip cor={pr.cor}>Prioridade {pr.label.toLowerCase()}</Chip>
-                      {u && <Chip cor={u.cor}><Clock size={11} /> {u.label}</Chip>}
-                      {d.prazo && !u && <span className="text-[11px]" style={{ color: S.tintaSuave }}>Prazo {fmtCurta(d.prazo)}</span>}
-                      {ev && <span className="text-[11px] flex items-center gap-1" style={{ color: S.tintaSuave }}><CalendarIcon size={11} /> {ev.titulo}</span>}
-                    </div>
-                  </button>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      {d.responsavel ? <Avatar nome={d.responsavel} size={24} /> : <span className="w-6 h-6 rounded-full flex items-center justify-center" style={{ border: `1px dashed ${S.tintaSuave}` }}><User size={12} color={S.tintaSuave} /></span>}
-                      <SelectResponsavel value={d.responsavel} onChange={(v) => mudarResp(d.id, v)} membros={state.membros} vazio="Atribuir..." />
-                    </div>
-                    <Select value={d.status} onChange={(e) => mudarStatus(d.id, e.target.value)} style={{ color: st.cor, fontWeight: 600, background: st.cor + "12", borderColor: st.cor + "40" }}>
-                      {STATUS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-                    </Select>
-                    <IconBtn title="Editar" onClick={() => abrirDemanda(d)}><Pencil size={15} /></IconBtn>
-                  </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+        <button onClick={() => setVerEquipe(true)} className="rounded-full px-5 py-2.5 text-sm font-semibold flex items-center gap-2" style={{ background: S.branco, border: `1px solid ${S.linha}`, color: S.tinta }}><Users size={16} /> Equipe ({state.membros.length})</button>
+        <Select value={filtroResp} onChange={(e) => setFiltroResp(e.target.value)} className="!rounded-full !px-5 !py-2.5">
+          <option value="">Todos os responsáveis</option>
+          {state.usuario && <option value="__eu">Minhas demandas</option>}
+          {state.membros.map((m) => <option key={m.id} value={m.nome}>{m.nome}</option>)}
+        </Select>
+      </div>
+
+      {/* kanban */}
+      <div className="overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="grid gap-5 pt-4" style={{ gridTemplateColumns: `repeat(${STATUS.length}, minmax(260px, 1fr))` }}>
+          {STATUS.map((col, i) => {
+            const cards = visiveis.filter((d) => d.status === col.id).sort((a, b) => (a.prazo || "9999").localeCompare(b.prazo || "9999"));
+            return (
+              <div
+                key={col.id}
+                className="relative"
+                onDragOver={(e) => { e.preventDefault(); setSobre(col.id); }}
+                onDragLeave={() => setSobre((x) => (x === col.id ? null : x))}
+                onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (id) mover(id, col.id); setSobre(null); setArrastando(null); }}
+              >
+                <Fita cor={col.fita} ponto={col.cor} contador={cards.length} className="absolute -top-4 left-5 z-10" rot={i % 2 ? 1.5 : -1.5}>{col.label}</Fita>
+                <div className="rounded-3xl p-4 pt-8 flex flex-col gap-3 min-h-[320px] transition-colors" style={{ background: sobre === col.id ? col.fundo : "rgba(255,253,249,0.85)", border: `1.5px ${sobre === col.id ? "dashed" : "solid"} ${sobre === col.id ? col.cor : S.linha}` }}>
+                  {cards.map((d) => <CardDemanda key={d.id} d={d} state={state} abrirDemanda={abrirDemanda} mover={mover} excluir={excluir} arrastando={arrastando} setArrastando={setArrastando} />)}
+                  {cards.length === 0 && <p className="text-xl text-center py-8" style={{ color: "#C9B8A8", fontFamily: FONTE_MAO }}>arraste uma demanda pra cá ✿</p>}
                 </div>
-              );
-            })}
-          </div>
-        </Card>
-        <Equipe state={state} update={update} />
+              </div>
+            );
+          })}
+        </div>
       </div>
+      <p className="text-xs mt-2" style={{ color: S.tintaSuave }}>Dica: arraste os cartões entre as colunas, ou use ▶ para avançar e ✓ para concluir.</p>
+
+      {verEquipe && (
+        <Modal titulo="Equipe do comitê" onFechar={() => setVerEquipe(false)} largura={420}>
+          <Equipe state={state} update={update} semCard />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -1037,7 +1128,7 @@ function AbaPassos({ state, update }) {
 
   return (
     <div>
-      <CabecalhoPagina icon={ListChecks} titulo="Próximos passos" sub="Checklist de organização do comitê." />
+      <CabecalhoPagina emoji="✅" titulo="Próximos passos" sub="Checklist de organização do comitê." />
       <Card className="p-5 mb-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold" style={{ color: S.tinta }}>{feitos.length} de {total} concluídos</span>
@@ -1055,7 +1146,7 @@ function AbaPassos({ state, update }) {
           <BotaoPrimario onClick={add}><Plus size={16} /> Adicionar</BotaoPrimario>
         </div>
         <div className="flex flex-col gap-2">
-          {pendentes.length === 0 && <div className="flex flex-col items-center py-4"><Mascote size={110} /><p className="text-sm font-semibold" style={{ color: S.laranja }}>Tudo em dia! 🎉</p></div>}
+          {pendentes.length === 0 && <p className="text-2xl text-center py-4" style={{ color: S.laranja, fontFamily: FONTE_MAO }}>Tudo em dia! 🎉</p>}
           {pendentes.map((p) => <LinhaPasso key={p.id} p={p} membros={state.membros} alterar={alterar} remover={remover} />)}
         </div>
         {feitos.length > 0 && (
@@ -1085,12 +1176,12 @@ function AbaIdeias({ state, update }) {
   const ordenadas = [...state.ideias].sort((a, b) => b.votos - a.votos);
   return (
     <div>
-      <CabecalhoPagina icon={Lightbulb} titulo="Ideias e sugestões" sub="Um mural para o comitê propor e votar em novas ações." />
+      <CabecalhoPagina emoji="💡" titulo="Ideias e sugestões" sub="Um mural para o comitê propor e votar em novas ações." />
       <Card className="p-5 mb-5">
         <TextArea rows={3} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Qual a sua ideia para o próximo evento?" className="w-full" />
         <div className="flex justify-end mt-2"><BotaoPrimario onClick={add}><Lightbulb size={16} /> Enviar ideia</BotaoPrimario></div>
       </Card>
-      {ordenadas.length === 0 && <div className="flex flex-col items-center py-6"><Mascote size={120} /><p className="text-sm" style={{ color: S.tintaSuave }}>Nenhuma ideia ainda — que tal ser a primeira pessoa? 💡</p></div>}
+      {ordenadas.length === 0 && <p className="text-2xl text-center py-6" style={{ color: S.tintaSuave, fontFamily: FONTE_MAO }}>Nenhuma ideia ainda — que tal ser a primeira pessoa? 💡</p>}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {ordenadas.map((i) => (
           <Card key={i.id} className="p-4 flex flex-col gap-3">
@@ -1113,10 +1204,10 @@ function Banner() {
   return (
     <div className="rounded-2xl p-5 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${S.laranjaClaro}, #FFE2D6)`, border: `1px solid ${S.laranjaBorda}` }}>
       <div className="relative z-10 pr-24 py-2">
-        <p className="text-lg font-extrabold leading-tight" style={{ color: S.tinta }}>Eventos que engajam pessoas e constroem</p>
-        <p className="text-2xl font-black leading-tight" style={{ color: S.laranja }}>grandes histórias!</p>
+        <p className="text-lg font-bold leading-tight" style={{ color: S.tinta }}>Eventos que engajam pessoas e constroem</p>
+        <p className="text-4xl leading-tight" style={{ color: S.laranja, fontFamily: FONTE_MAO }}>grandes histórias!</p>
       </div>
-      <Mascote size={122} className="absolute right-1 bottom-1" />
+      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-5xl rotate-6">📣</span>
       <span className="absolute -right-6 -top-6 w-24 h-24 rounded-full" style={{ background: "rgba(238,77,45,0.08)" }} />
     </div>
   );
@@ -1127,21 +1218,21 @@ function Indicadores({ state }) {
   const ini = inicioSemana(agora);
   const fim = addDias(ini, 6);
   const itens = [
-    { label: "Eventos no mês", valor: state.eventos.filter((e) => { const d = fromISO(e.data); return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear(); }).length, icon: CalendarIcon },
-    { label: "Atividades na semana", valor: state.eventos.filter((e) => { const d = fromISO(e.data); return d >= ini && d <= fim; }).length, icon: Clock },
-    { label: "Demandas abertas", valor: state.demandas.filter((d) => d.status !== "concluida").length, icon: ClipboardList },
-    { label: "Passos pendentes", valor: state.passos.filter((p) => !p.feito).length, icon: ListChecks },
+    { label: "Eventos no mês", valor: state.eventos.filter((e) => { const d = fromISO(e.data); return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear(); }).length, icon: CalendarIcon, fundo: "#FDEEDF", cor: "#D9822B" },
+    { label: "Atividades na semana", valor: state.eventos.filter((e) => { const d = fromISO(e.data); return d >= ini && d <= fim; }).length, icon: Clock, fundo: "#EEEAFB", cor: "#7C6BC9" },
+    { label: "Demandas abertas", valor: state.demandas.filter((d) => d.status !== "concluida").length, icon: ClipboardList, fundo: "#FCE7EE", cor: "#D9607F" },
+    { label: "Passos pendentes", valor: state.passos.filter((p) => !p.feito).length, icon: ListChecks, fundo: "#E3F3EA", cor: "#3F9A6C" },
   ];
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {itens.map((i) => (
-        <Card key={i.label} className="px-4 py-3 flex items-center gap-3">
-          <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: S.laranjaClaro, color: S.laranja }}><i.icon size={19} /></span>
+        <div key={i.label} className="rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: i.fundo, border: `1px solid ${S.branco}` }}>
+          <span className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: S.branco, color: i.cor }}><i.icon size={18} /></span>
           <div className="min-w-0">
-            <p className="text-2xl font-extrabold leading-none" style={{ color: S.tinta }}>{i.valor}</p>
-            <p className="text-xs mt-0.5 truncate" style={{ color: S.tintaSuave }}>{i.label}</p>
+            <p className="text-3xl italic font-bold leading-none" style={{ color: i.cor, fontFamily: FONTE_TITULO }}>{i.valor}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mt-1 truncate" style={{ color: S.tintaSuave }}>{i.label}</p>
           </div>
-        </Card>
+        </div>
       ))}
     </div>
   );
@@ -1157,10 +1248,10 @@ function Saudacao({ state }) {
     : deHoje.length === 1 ? `Hoje tem ${tipoInfo(deHoje[0].tipo).emoji} ${deHoje[0].titulo}${deHoje[0].horaInicio ? " às " + deHoje[0].horaInicio : ""}. Bora!`
     : `Hoje tem ${deHoje.length} atividades no calendário. Bora! 🚀`;
   return (
-    <div className="rounded-2xl relative overflow-hidden flex items-center gap-3 pl-2 pr-5" style={{ background: `linear-gradient(90deg, ${S.laranjaClaro}, #fff)`, border: `1px solid ${S.laranjaBorda}` }}>
+    <div className="rounded-2xl relative overflow-hidden flex items-center gap-3 pl-2 pr-5" style={{ background: S.branco, border: `1px solid ${S.linha}`, boxShadow: "0 4px 18px rgba(120,90,60,0.06)" }}>
       <Mascote size={96} className="shrink-0 my-1" />
       <div className="py-3 min-w-0">
-        <p className="text-lg font-extrabold" style={{ color: S.tinta }}>{oi}{primeiroNome ? `, ${primeiroNome}` : ""}! 👋</p>
+        <p className="text-2xl italic font-bold" style={{ color: S.tinta, fontFamily: FONTE_TITULO }}>{oi}{primeiroNome ? `, ${primeiroNome}` : ""}! 👋</p>
         <p className="text-sm" style={{ color: S.tintaSuave }}>{fmtLonga(hojeISO()).replace(/^./, (c) => c.toUpperCase())} · {frase}</p>
       </div>
       <span className="hidden md:block absolute right-6 top-3 text-2xl rotate-12">🎈</span>
@@ -1177,9 +1268,9 @@ function AbaVisaoGeral({ state, onNovoEvento, onAbrirEvento, irParaPasta }) {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px] items-start">
         <Card className="p-4 sm:p-5 min-w-0">
           <div className="flex items-start gap-3 mb-1">
-            <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: S.laranja, color: "#fff" }}><CalendarIcon size={20} /></span>
+            <span className="text-3xl">🗓️</span>
             <div>
-              <h2 className="text-base font-extrabold uppercase tracking-wide" style={{ color: S.tinta }}>Calendário de eventos</h2>
+              <h2 className="text-2xl italic font-bold" style={{ color: S.tinta, fontFamily: FONTE_TITULO }}>Calendário de eventos</h2>
               <p className="text-xs" style={{ color: S.tintaSuave }}>Acompanhe todos os eventos, campanhas e ações da nossa região. Clique em um dia para adicionar.</p>
             </div>
           </div>
@@ -1187,15 +1278,15 @@ function AbaVisaoGeral({ state, onNovoEvento, onAbrirEvento, irParaPasta }) {
         </Card>
         <div className="flex flex-col gap-5">
           <Card className="p-4">
-            <TituloSecao icon={Star}>Destaques do mês</TituloSecao>
+            <TituloSecao cor="#F7D2DF">destaques do mês ★</TituloSecao>
             <DestaquesDoMes pastas={state.pastas} irParaPasta={irParaPasta} />
           </Card>
           <Card className="p-4">
-            <TituloSecao icon={Clock} sub="Atividades de segunda a domingo">Esta semana</TituloSecao>
+            <TituloSecao cor="#F9DCC2" sub="Atividades de segunda a domingo">esta semana</TituloSecao>
             <AgendaSemana eventos={state.eventos} onAbrir={onAbrirEvento} />
           </Card>
           <Card className="p-4">
-            <TituloSecao icon={ListChecks} sub="Quantidade no mês atual">Tipos de eventos</TituloSecao>
+            <TituloSecao cor="#DDD5F6" sub="Quantidade no mês atual">tipos de eventos</TituloSecao>
             <LegendaTipos eventos={state.eventos} />
           </Card>
           <Banner />
@@ -1208,17 +1299,17 @@ function AbaVisaoGeral({ state, onNovoEvento, onAbrirEvento, irParaPasta }) {
 function AbaCalendario({ state, onNovoEvento, onAbrirEvento }) {
   return (
     <div>
-      <CabecalhoPagina icon={CalendarIcon} titulo="Calendário" sub="Semana, mês e lista de todas as atividades do comitê."
+      <CabecalhoPagina emoji="🗓️" titulo="Calendário" sub="Semana, mês e lista de todas as atividades do comitê."
         acao={<BotaoPrimario onClick={() => onNovoEvento(hojeISO())}><Plus size={16} /> Novo evento</BotaoPrimario>} />
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px] items-start">
         <Card className="p-4 sm:p-5 min-w-0"><Calendario eventos={state.eventos} onNovo={onNovoEvento} onAbrir={onAbrirEvento} /></Card>
         <div className="flex flex-col gap-5">
           <Card className="p-4">
-            <TituloSecao icon={Clock}>Atividades da semana</TituloSecao>
+            <TituloSecao cor="#F9DCC2">atividades da semana</TituloSecao>
             <AgendaSemana eventos={state.eventos} onAbrir={onAbrirEvento} />
           </Card>
           <Card className="p-4">
-            <TituloSecao icon={ListChecks}>Tipos de eventos</TituloSecao>
+            <TituloSecao cor="#DDD5F6">tipos de eventos</TituloSecao>
             <LegendaTipos eventos={state.eventos} />
           </Card>
         </div>
@@ -1254,8 +1345,8 @@ function BuscaGlobal({ state, valor, setValor, irPara }) {
         onFocus={() => setAberto(true)}
         onBlur={() => setTimeout(() => setAberto(false), 150)}
         placeholder="Buscar eventos, materiais, demandas..."
-        className="w-full rounded-full pl-10 pr-9 py-2.5 text-sm outline-none"
-        style={{ background: S.branco, color: S.tinta }}
+        className="w-full rounded-full pl-10 pr-9 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-200"
+        style={{ background: S.branco, color: S.tinta, border: `1px solid ${S.linha}` }}
       />
       {valor && <button onClick={() => setValor("")} aria-label="Limpar busca" className="absolute right-3 top-1/2 -translate-y-1/2"><X size={15} color={S.tintaSuave} /></button>}
       {aberto && termo.length >= 2 && (
@@ -1286,9 +1377,9 @@ function Notificacoes({ state, abrirDemanda, abrirEvento }) {
   ];
   return (
     <div className="relative">
-      <button onClick={() => setAberto((a) => !a)} aria-label="Notificações" className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/15">
-        <Bell size={21} color="#fff" />
-        {itens.length > 0 && <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center px-1" style={{ background: "#fff", color: S.laranja }}>{itens.length}</span>}
+      <button onClick={() => setAberto((a) => !a)} aria-label="Notificações" className="relative w-10 h-10 rounded-full flex items-center justify-center" style={{ background: S.branco, border: `1px solid ${S.linha}` }}>
+        <Bell size={19} color={S.laranja} />
+        {itens.length > 0 && <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center px-1" style={{ background: "#E07A9B", color: "#fff" }}>{itens.length}</span>}
       </button>
       {aberto && (
         <>
@@ -1410,31 +1501,29 @@ export default function ComiteEventos() {
     visao: <AbaVisaoGeral state={state} onNovoEvento={novoEvento} onAbrirEvento={abrirEvento} irParaPasta={irParaPasta} />,
     calendario: <AbaCalendario state={state} onNovoEvento={novoEvento} onAbrirEvento={abrirEvento} />,
     materiais: <AbaMateriais state={state} update={update} pastaAberta={pastaAberta} setPastaAberta={setPastaAberta} busca={busca} />,
-    demandas: <AbaDemandas state={state} update={update} abrirDemanda={abrirDemanda} novaDemanda={novaDemanda} busca={busca} />,
+    demandas: <AbaDemandas state={state} update={update} abrirDemanda={abrirDemanda} busca={busca} />,
     passos: <AbaPassos state={state} update={update} />,
     ideias: <AbaIdeias state={state} update={update} />,
   }[aba];
 
   return (
-    <div className="min-h-screen" style={{ background: S.fundo, fontFamily: "'Nunito Sans', -apple-system, 'Segoe UI', Roboto, sans-serif" }}>
-      {/* cabeçalho laranja */}
-      <header className="relative overflow-hidden" style={{ background: `linear-gradient(100deg, ${S.laranja} 0%, ${S.laranja2} 100%)` }}>
-        <span className="absolute -top-16 left-1/3 w-56 h-56 rounded-full" style={{ background: "rgba(255,255,255,0.07)" }} />
-        <span className="absolute -bottom-24 right-1/4 w-64 h-64 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} />
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center gap-x-6 gap-y-3">
+    <div className="min-h-screen" style={{ ...FUNDO_BOLINHAS, color: S.tinta, fontFamily: "'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif" }}>
+      {/* cabeçalho */}
+      <header>
+        <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${S.laranja}, ${S.laranja2}, #F7C59F)` }} />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 pt-5 pb-2 flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex items-center gap-3">
-            <span className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#fff" }}><CalendarCheck size={26} color={S.laranja} /></span>
-            <div className="leading-tight text-white">
-              <p className="text-xs font-bold opacity-95">Shopee · Comitê de Eventos</p>
-              <h1 className="text-xl sm:text-2xl font-extrabold">Central de Eventos</h1>
+            <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 -rotate-3" style={{ background: S.laranja, boxShadow: "0 6px 16px rgba(238,106,63,0.25)" }}><CalendarCheck size={24} color="#fff" /></span>
+            <div className="leading-tight">
+              <p className="text-xl" style={{ fontFamily: FONTE_MAO, color: S.laranja }}>Shopee · Comitê de Eventos</p>
+              <h1 className="text-2xl sm:text-3xl italic font-bold" style={{ fontFamily: FONTE_TITULO, color: S.tinta }}>Central de Eventos</h1>
             </div>
           </div>
-          <p className="hidden lg:block text-sm font-semibold text-white/95 pl-6 leading-snug" style={{ borderLeft: "1px solid rgba(255,255,255,0.4)" }}>Pessoas que conectam,<br />eventos que transformam!</p>
-          <Mascote size={64} className="hidden xl:block -my-2 drop-shadow" />
+          <p className="hidden lg:block text-sm pl-6 leading-snug" style={{ borderLeft: `1px solid ${S.linha}`, color: S.tintaSuave }}>Pessoas que conectam,<br />eventos que transformam! ✨</p>
           <div className="flex items-center gap-3 flex-1 justify-end min-w-[260px]">
             <BuscaGlobal state={state} valor={busca} setValor={setBusca} irPara={irPara} />
             <Notificacoes state={state} abrirDemanda={(d) => { setAba("demandas"); abrirDemanda(d); }} abrirEvento={abrirEvento} />
-            <button onClick={trocarUsuario} title="Trocar nome" className="hidden sm:flex items-center gap-2 rounded-full pl-1 pr-3 py-1" style={{ background: "#fff" }}>
+            <button onClick={trocarUsuario} title="Trocar nome" className="hidden sm:flex items-center gap-2 rounded-full pl-1 pr-3 py-1" style={{ background: S.branco, border: `1px solid ${S.linha}` }}>
               <span className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ background: S.laranjaClaro }}><MascoteRosto size={34} /></span>
               <span className="text-left leading-tight">
                 <span className="block text-sm font-bold max-w-[150px] truncate" style={{ color: S.tinta }}>{state.usuario || "Definir nome"}</span>
@@ -1447,14 +1536,14 @@ export default function ComiteEventos() {
       </header>
 
       {/* abas */}
-      <nav className="sticky top-0 z-20" style={{ background: S.branco, borderBottom: `1px solid ${S.linha}` }}>
+      <nav className="sticky top-0 z-20 backdrop-blur" style={{ background: "rgba(248,241,231,0.88)", borderBottom: `1px solid ${S.linha}` }}>
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2">
           <div className="flex gap-2 overflow-x-auto flex-1" style={{ scrollbarWidth: "none" }}>
             {ABAS.map((a) => {
               const ativo = aba === a.id;
               return (
-                <button key={a.id} onClick={() => { setAba(a.id); if (a.id === "materiais") setPastaAberta(null); }} className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shrink-0 transition-colors" style={{ background: ativo ? S.laranjaClaro : S.branco, color: ativo ? S.laranja : S.tinta, border: `1px solid ${ativo ? S.laranjaBorda : S.linha}` }}>
-                  <a.icon size={17} color={S.laranja} /> {a.label}
+                <button key={a.id} onClick={() => { setAba(a.id); if (a.id === "materiais") setPastaAberta(null); }} className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shrink-0 transition-colors" style={{ background: ativo ? S.laranjaClaro : S.branco, color: ativo ? S.laranja : S.tinta, border: `1.5px solid ${ativo ? S.laranja2 : S.linha}` }}>
+                  <a.icon size={17} color={ativo ? S.laranja : S.tintaSuave} /> {a.label}
                 </button>
               );
             })}
