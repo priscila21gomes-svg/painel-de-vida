@@ -17,18 +17,9 @@ export function Mascote({ size = 120, className = "", style }) {
 }
 
 // ---------- capas temáticas (120x90) ----------
-function Confete({ cores = ["#EE4D2D", "#F5A623", "#2F80ED", "#E5487A", "#27AE60"] }) {
-  const pontos = [[10, 14, 0], [104, 12, 1], [16, 74, 2], [108, 70, 3], [96, 40, 4], [22, 44, 1]];
-  return pontos.map(([x, y, c], i) => (
-    i % 2 ? <circle key={i} cx={x} cy={y} r="3" fill={cores[c % cores.length]} />
-      : <rect key={i} x={x} y={y} width="6" height="3" rx="1" fill={cores[c % cores.length]} transform={`rotate(${30 * i} ${x} ${y})`} />
-  ));
-}
-
 function Laco() {
   return (
     <g>
-      <Confete cores={["#F9A8D4", "#E5487A", "#FBCFE8"]} />
       <path d="M46 82 L70 34 A13 13 0 1 0 48 34 L76 82" stroke="#E5487A" strokeWidth="13" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M48 34 L76 82" stroke="#D63A6C" strokeWidth="13" fill="none" strokeLinecap="round" />
       <path d="M53 26 Q58 20 63 24" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.7" />
@@ -55,7 +46,6 @@ function Crianca({ x, pele, cabelo, camisa, laco }) {
 function Criancas() {
   return (
     <g>
-      <Confete />
       <Crianca x={30} pele="#F2C29B" cabelo="#4B2E1E" camisa="#2F80ED" />
       <Crianca x={90} pele="#8D5A3B" cabelo="#1F130C" camisa="#27AE60" />
       <g transform="translate(0 -6)"><Crianca x={60} pele="#FFD9B8" cabelo="#B45309" camisa="#F5A623" laco /></g>
@@ -66,7 +56,6 @@ function Criancas() {
 function Sacola() {
   return (
     <g>
-      <Confete />
       <path d="M48 30 Q48 12 60 12 Q72 12 72 30" stroke="#fff" strokeWidth="5" fill="none" strokeLinecap="round" />
       <path d="M48 30 Q48 12 60 12 Q72 12 72 30" stroke="#C2410C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       <path d="M34 28 L86 28 L90 80 Q90 84 86 84 L34 84 Q30 84 30 80 Z" fill="#fff" />
@@ -80,7 +69,6 @@ function Sacola() {
 function Pets() {
   return (
     <g>
-      <Confete />
       {/* cachorro */}
       <g transform="translate(40 52)">
         <ellipse cx="-17" cy="-8" rx="8" ry="15" fill="#7C4A2D" transform="rotate(20 -17 -8)" />
@@ -108,7 +96,6 @@ function Pets() {
 function Megafone() {
   return (
     <g>
-      <Confete />
       <g transform="rotate(-15 60 46)">
         <rect x="26" y="38" width="16" height="18" rx="4" fill="#5B21B6" />
         <path d="M40 36 L84 18 L84 76 L40 58 Z" fill="#8B5CF6" />
@@ -124,7 +111,6 @@ function Megafone() {
 function Templates() {
   return (
     <g>
-      <Confete />
       <rect x="30" y="22" width="44" height="56" rx="6" fill="#FDE68A" transform="rotate(-10 52 50)" />
       <rect x="42" y="18" width="44" height="56" rx="6" fill="#fff" stroke="#F5A623" strokeWidth="3" />
       <rect x="49" y="26" width="30" height="16" rx="3" fill="#FFE2D6" />
@@ -143,7 +129,6 @@ function Templates() {
 function Operacional() {
   return (
     <g>
-      <Confete />
       <rect x="36" y="16" width="48" height="66" rx="7" fill="#2F80ED" />
       <rect x="41" y="23" width="38" height="54" rx="4" fill="#fff" />
       <rect x="49" y="11" width="22" height="12" rx="4" fill="#1E40AF" />
@@ -160,7 +145,6 @@ function Operacional() {
 function Presente() {
   return (
     <g>
-      <Confete />
       <rect x="34" y="40" width="52" height="42" rx="5" fill="#EE4D2D" />
       <rect x="30" y="30" width="60" height="14" rx="4" fill="#FF7337" />
       <rect x="55" y="30" width="10" height="52" fill="#F5A623" />
