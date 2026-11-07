@@ -333,3 +333,6 @@ button, input, a { font: inherit; }
 .card.fase-concluido .card-status { background: #e3f6e8; color: #1f6b2a; }
 .card.fase-futuro .card-status { background: #f3e9e6; color: #6b4a40; }
 .card.fase-concluido.destaque .card-corpo, .card.fase-futuro.destaque .card-corpo { background: #f5e3a8; }
+
+/* ranking só com percentual: pílula um pouco maior */
+.ad-pct { font-size: 14px; font-weight: 700; color: var(--texto); min-width: 58px; padding: 2px 10px; }

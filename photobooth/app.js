@@ -120,7 +120,6 @@
       const novas = r.fotos.map((f) => ({ ...f, legenda: `Dia ${f.dia} · ${nomeDia[f.dia] || ""}${f.uf ? " · " + (Aderencia.porUF[f.uf] ? Aderencia.porUF[f.uf].nome : f.uf) : ""}` }));
       const mudou = novas.map((f) => f.t).join() !== gl.fotos.map((f) => f.t).join();
       gl.fotos = novas;
-      $("gl-total").textContent = r.total ? `${fmt.format(r.total)} ${r.total === 1 ? "foto" : "fotos"}` : "";
       $("gl-palco").hidden = !gl.fotos.length;
       $("gl-status").textContent = gl.fotos.length ? "" : "As fotos aparecem aqui assim que o pessoal começar a participar. Seja o primeiro! 📸";
       if (mudou) { gl.atual = 0; desenharCarrossel(true); }
@@ -276,11 +275,10 @@
     itens.forEach((i, idx) => {
       const li = document.createElement("li");
       const pct = total ? fmtPct.format(i.valor / total) : "–";
-      li.title = `${i.rotulo}: ${fmt.format(i.valor)} participações (${pct} do total)`;
-      li.innerHTML = `<span class="ad-pos"></span><span class="ad-info"><span class="ad-linha"><span class="ad-nome"></span><span class="ad-valor"><b></b><span class="ad-pct"></span></span></span><span class="ad-sub"></span><span class="ad-trilho"><span class="ad-barra"></span></span></span>`;
+      li.title = `${i.rotulo}: ${pct} do total de participações`;
+      li.innerHTML = `<span class="ad-pos"></span><span class="ad-info"><span class="ad-linha"><span class="ad-nome"></span><span class="ad-valor"><span class="ad-pct"></span></span></span><span class="ad-sub"></span><span class="ad-trilho"><span class="ad-barra"></span></span></span>`;
       li.querySelector(".ad-pos").textContent = `${idx + 1}º`;
       li.querySelector(".ad-nome").textContent = i.rotulo;
-      li.querySelector(".ad-valor b").textContent = fmt.format(i.valor);
       li.querySelector(".ad-pct").textContent = pct;
       const sub = li.querySelector(".ad-sub");
       if (i.sub) sub.textContent = i.sub; else sub.remove();
