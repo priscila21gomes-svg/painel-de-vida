@@ -277,7 +277,9 @@
       const pct = total ? fmtPct.format(i.valor / total) : "–";
       li.title = `${i.rotulo}: ${pct} do total de participações`;
       li.innerHTML = `<span class="ad-pos"></span><span class="ad-info"><span class="ad-linha"><span class="ad-nome"></span><span class="ad-valor"><span class="ad-pct"></span></span></span><span class="ad-sub"></span><span class="ad-trilho"><span class="ad-barra"></span></span></span>`;
-      li.querySelector(".ad-pos").textContent = `${idx + 1}º`;
+      // Empate fica com a mesma posição (ex.: 5º e 5º).
+      const pos = itens.findIndex((x) => x.valor === i.valor) + 1;
+      li.querySelector(".ad-pos").textContent = `${pos}º`;
       li.querySelector(".ad-nome").textContent = i.rotulo;
       li.querySelector(".ad-pct").textContent = pct;
       const sub = li.querySelector(".ad-sub");
@@ -596,7 +598,8 @@
     baixar.className = "btn " + (podeCompartilhar ? "btn-claro" : "btn-amarelo");
     $("dica-salvar").hidden = false;
     const local = Aderencia.localAtual();
-    if (local) Aderencia.registrar(st.dia.dia, local.uf);
+    // Só conta na aderência se o desafio estiver aberto de verdade (não conta no modo ?todos=1).
+    if (local && statusDia(st.dia).hoje) Aderencia.registrar(st.dia.dia, local.uf);
     prepararAlbum();
     mostrar("tela-resultado");
   }

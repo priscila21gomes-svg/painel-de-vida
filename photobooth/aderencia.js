@@ -109,13 +109,16 @@
       est[l.uf] = (est[l.uf] || 0) + l.total;
       dia[l.dia] = (dia[l.dia] || 0) + l.total;
     }
-    const ordenar = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]);
+    // Maior primeiro; empate em ordem alfabética (sempre a mesma ordem).
+    const ordenar = (o, nome) => Object.entries(o).sort((a, b) => b[1] - a[1] || nome(a[0]).localeCompare(nome(b[0]), "pt-BR"));
+    // Top 5 que inclui quem empatou com o 5º colocado.
+    const top5 = (lista) => lista.filter(([, v], i) => i < 5 || v === lista[4][1]);
     return {
       total,
       estadosAtivos: Object.values(est).filter((v) => v > 0).length,
-      regioes: ordenar(reg).map(([nome, v]) => ({ rotulo: nome, valor: v })),
-      estados: ordenar(est).slice(0, 5).map(([uf, v]) => ({ rotulo: porUF[uf].nome, sub: `${uf} · ${porUF[uf].regiao}`, valor: v })),
-      dias: ordenar(dia).slice(0, 5).map(([d, v]) => ({ rotulo: `Dia ${d}`, sub: nomeDia[d] || "", valor: v })),
+      regioes: ordenar(reg, (r) => r).map(([nome, v]) => ({ rotulo: nome, valor: v })),
+      estados: top5(ordenar(est, (uf) => porUF[uf].nome)).filter(([, v]) => v > 0).map(([uf, v]) => ({ rotulo: porUF[uf].nome, sub: `${uf} · ${porUF[uf].regiao}`, valor: v })),
+      dias: top5(ordenar(dia, (d) => String(d).padStart(2, "0"))).filter(([, v]) => v > 0).map(([d, v]) => ({ rotulo: `Dia ${d}`, sub: nomeDia[d] || "", valor: v })),
     };
   }
 
