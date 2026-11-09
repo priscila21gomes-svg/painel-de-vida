@@ -266,62 +266,106 @@ function diagnostico() {
   Logger.log("Fotos do photobooth na lixeira: " + nl);
 }
 
-// 3) Rode "recuperarFotos": acha TODAS as fotos do photobooth (inclusive na lixeira ou dentro de
-//    pastas apagadas), tira da lixeira e coloca cada uma na pasta do seu dia. Não apaga nada.
-//    Se não der para restaurar um arquivo, faz uma cópia dele no lugar certo.
-//    Se aparecer "Pausado por tempo", é só rodar de novo: continua de onde parou.
+// 3) Rode "recuperarFotos": acha as fotos do photobooth que estão na lixeira (ou fora do lugar),
+//    tira da lixeira e coloca cada uma na pasta do seu dia. Não apaga nada.
+//    Continua de onde parou: se aparecer "Pausado por tempo", é só rodar de novo.
 function recuperarFotos() {
   const inicio = Date.now();
-  let pastasRest = 0, restauradas = 0, copiadas = 0, jaOk = 0, falhas = 0;
+  const props = PropertiesService.getScriptProperties();
+  const st = JSON.parse(props.getProperty("recuperar_estado") || '{"etapa":0,"rest":0,"mov":0,"cop":0,"ok":0,"falhas":0}');
+  const tempoAcabou = function () { return Date.now() - inicio > 4.5 * 60 * 1000; };
 
-  // Pastas do photobooth na lixeira → restaura
-  const pastasLixo = DriveApp.searchFolders("trashed = true");
-  while (pastasLixo.hasNext()) {
-    const f = pastasLixo.next(), n = f.getName();
-    if (n === PASTA_RAIZ || n === PASTA_PREVIAS || /^Dia \d - /.test(n)) {
-      try { f.setTrashed(false); pastasRest++; } catch (e) { Logger.log("Não restaurou pasta " + n + ": " + e); }
+  // Etapa 0: pastas do photobooth na lixeira → restaura
+  if (st.etapa === 0) {
+    const pastas = DriveApp.searchFolders("trashed = true and (title contains 'Photobooth' or title contains 'Dia ' or title contains '_galeria')");
+    while (pastas.hasNext()) {
+      const f = pastas.next(), n = f.getName();
+      if (n === PASTA_RAIZ || n === PASTA_PREVIAS || /^Dia \d - /.test(n)) {
+        try { f.setTrashed(false); Logger.log("Pasta restaurada: " + n); } catch (e) { Logger.log("Não restaurou pasta " + n + ": " + e); }
+      }
     }
+    st.etapa = 1;
   }
 
-  // Nomes que já estão no lugar certo (para não duplicar)
+  // O que já está no lugar certo (nome → true), montado rápido a partir das pastas
   const jaTem = {};
   const marcar = function (pasta, prefixo) { const it = pasta.getFiles(); while (it.hasNext()) jaTem[prefixo + it.next().getName()] = true; };
   for (let d = 1; d <= 7; d++) marcar(pastaDoDia(d), "D");
   marcar(pastaPrevias(), "P");
 
-  const consultas = ["title contains 'dia-' and trashed = true", "title contains 'dia-' and trashed = false"];
-  for (const q of consultas) {
-    const it = DriveApp.searchFiles(q);
+  // Etapa 1: arquivos na lixeira. Etapa 2: arquivos fora do lugar (ex.: em pastas antigas).
+  const consultas = { 1: "title contains 'dia-' and trashed = true", 2: "title contains 'dia-' and trashed = false" };
+  while (st.etapa <= 2) {
+    const it = st.token ? DriveApp.continueFileIterator(st.token) : DriveApp.searchFiles(consultas[st.etapa]);
     while (it.hasNext()) {
-      if (Date.now() - inicio > 5 * 60 * 1000) {
-        Logger.log("Pausado por tempo. Restauradas: " + restauradas + " · copiadas: " + copiadas + ". Rode de novo.");
-        reconstruirIndice(); return;
+      if (tempoAcabou()) {
+        st.token = it.getContinuationToken();
+        props.setProperty("recuperar_estado", JSON.stringify(st));
+        Logger.log("Pausado por tempo (etapa " + st.etapa + "/2). Até agora: da lixeira " + st.rest + " · movidas " + st.mov + " · copiadas " + st.cop + ". Rode de novo para continuar.");
+        return;
       }
       const f = it.next(), nome = f.getName();
       const m = nome.match(/^dia-(\d)_[A-Z]{2}_/);
       if (!m) continue;
-      const ehPrevia = f.getSize() < 120 * 1024;          // cópia leve da galeria (~25 KB)
-      const chave = (ehPrevia ? "P" : "D") + nome;
-      const destino = ehPrevia ? pastaPrevias() : pastaDoDia(Number(m[1]));
+      const lixo = st.etapa === 1;
+      // Rápido: na etapa 2, se já existe um arquivo com esse nome no lugar certo, pula
+      if (!lixo && jaTem["D" + nome] && jaTem["P" + nome]) { st.ok++; continue; }
       try {
-        if (f.isTrashed()) { f.setTrashed(false); restauradas++; }
-        // Já está na pasta certa?
-        let noLugar = false; const pais = f.getParents();
-        while (pais.hasNext()) { if (pais.next().getId() === destino.getId()) noLugar = true; }
-        if (noLugar) { jaTem[chave] = true; jaOk++; continue; }
-        if (jaTem[chave]) { jaOk++; continue; }
-        try { f.moveTo(destino); } catch (e) { f.makeCopy(nome, destino); copiadas++; }
+        const ehPrevia = f.getSize() < 120 * 1024;
+        const chave = (ehPrevia ? "P" : "D") + nome;
+        if (!lixo && jaTem[chave]) { st.ok++; continue; }
+        const destino = ehPrevia ? pastaPrevias() : pastaDoDia(Number(m[1]));
+        if (lixo) { f.setTrashed(false); st.rest++; }
+        if (jaTem[chave]) continue;
+        try { f.moveTo(destino); st.mov++; } catch (e) { f.makeCopy(nome, destino); st.cop++; }
         jaTem[chave] = true;
       } catch (e) {
-        try { if (!jaTem[chave]) { f.makeCopy(nome, destino); jaTem[chave] = true; copiadas++; } }
-        catch (e2) { falhas++; Logger.log("Falhou: " + nome + " — " + e2); }
+        st.falhas++;
+        Logger.log("Falhou: " + nome + " — " + e);
       }
     }
+    st.etapa++; delete st.token;
   }
+
+  props.deleteProperty("recuperar_estado");
   reconstruirIndice();
-  Logger.log("Pronto! Pastas restauradas: " + pastasRest + " · fotos tiradas da lixeira: " + restauradas +
-             " · copiadas: " + copiadas + " · já no lugar: " + jaOk + " · falhas: " + falhas);
-  Logger.log("Pasta principal: " + pegarOuCriar(DriveApp.getRootFolder(), PASTA_RAIZ).getUrl());
+  Logger.log("Pronto! Tiradas da lixeira: " + st.rest + " · movidas: " + st.mov + " · copiadas: " + st.cop +
+             " · já no lugar: " + st.ok + " · falhas: " + st.falhas);
+  contarFotos();
+}
+
+// 4) Rode "contarFotos": mostra, por dia, quantas fotos originais e quantas cópias leves existem.
+function contarFotos() {
+  const prev = {}, orig = {};
+  const contar = function (pasta, alvo) {
+    const it = pasta.getFiles();
+    while (it.hasNext()) { const m = it.next().getName().match(/^dia-(\d)_/); if (m) alvo[m[1]] = (alvo[m[1]] || 0) + 1; }
+  };
+  for (let d = 1; d <= 7; d++) contar(pastaDoDia(d), orig);
+  contar(pastaPrevias(), prev);
+  for (let d = 1; d <= 7; d++) {
+    Logger.log("Dia " + d + ": " + (orig[d] || 0) + " fotos originais · " + (prev[d] || 0) + " cópias leves na _galeria");
+  }
+}
+
+// 5) Rode "salvarCopiasLeves": para cada cópia leve da _galeria que NÃO tem a foto original,
+//    coloca uma cópia dela na pasta do dia, com "(baixa resolução)" no nome. Não apaga nada.
+function salvarCopiasLeves() {
+  const inicio = Date.now();
+  const temOriginal = {};
+  for (let d = 1; d <= 7; d++) { const it = pastaDoDia(d).getFiles(); while (it.hasNext()) temOriginal[it.next().getName().replace(" (baixa resolução)", "")] = true; }
+  let criadas = 0;
+  const it = pastaPrevias().getFiles();
+  while (it.hasNext()) {
+    if (Date.now() - inicio > 4.5 * 60 * 1000) { Logger.log("Pausado por tempo. Criadas: " + criadas + ". Rode de novo."); return; }
+    const f = it.next(), nome = f.getName();
+    const m = nome.match(/^dia-(\d)_/);
+    if (!m || temOriginal[nome]) continue;
+    f.makeCopy(nome.replace(/\.jpg$/i, "") + " (baixa resolução).jpg", pastaDoDia(Number(m[1])));
+    temOriginal[nome] = true; criadas++;
+  }
+  Logger.log("Pronto! Cópias em baixa resolução colocadas nas pastas dos dias: " + criadas);
+  contarFotos();
 }
 
 function contarArquivos(pasta) {
