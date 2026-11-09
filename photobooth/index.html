@@ -13,6 +13,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
+    <script>
+      // Mesmo link para os dois modos: photobooth-peak-season.vercel.app/?tv abre o Modo TV.
+      if (/[?&]tv(=|&|$)/.test(location.search) || location.hash === "#tv") {
+        var extra = location.search.replace(/[?&]tv(=[^&]*)?/, "").replace(/^&/, "?");
+        location.replace("tv.html" + (extra && extra !== "?" ? extra : ""));
+      }
+    </script>
   </head>
   <body>
     <div id="inapp" class="inapp" hidden>
@@ -21,6 +28,10 @@
 
     <!-- TELA 1: CALENDÁRIO -->
     <main id="tela-inicio" class="tela">
+      <nav class="modos" aria-label="Escolher modo">
+        <span class="modo ativo">📱 Participar</span>
+        <a class="modo" href="tv.html">📺 Modo TV</a>
+      </nav>
       <header class="topo">
         <div class="selo">
           <span class="selo-titulo" id="campanha"></span>
@@ -71,8 +82,7 @@
       <footer class="rodape">
         <span class="hashtag" id="hashtag"></span>
         <p>📸 Ao participar, sua foto com a moldura vai para o álbum da campanha Peak Season.</p>
-        <a class="link-tv" href="tv.html">📺 Modo TV</a>
-      </footer>
+</footer>
     </main>
 
     <!-- TELA 2: CÂMERA -->

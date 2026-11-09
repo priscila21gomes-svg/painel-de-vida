@@ -59,6 +59,11 @@
   .vazio[hidden] { display: none; }
   .vazio p { margin: 0; font-size: 56px; font-weight: 700; max-width: 1200px; line-height: 1.1; }
 
+  /* Voltar ao site: aparece ao mexer o mouse/tocar */
+  #voltar { position: fixed; top: 16px; left: 16px; z-index: 40; padding: 12px 22px; border-radius: 40px; background: #fff; color: var(--vermelho);
+            font-weight: 700; font-size: 18px; text-decoration: none; box-shadow: 0 6px 16px rgba(0,0,0,.3); transition: opacity .4s; }
+  body.ocioso #voltar { opacity: 0; pointer-events: none; }
+
   /* Tela de início (o navegador só permite tela cheia depois de um clique) */
   #inicio { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
             background: rgba(26,6,2,.82); text-align: center; padding: 24px; }
@@ -95,10 +100,13 @@
     </section>
   </div>
 
+  <a id="voltar" href="./">← Voltar ao site</a>
+
   <div id="inicio">
     <h2>📺 Modo TV</h2>
     <p>Fotos ao vivo e cartaz dos desafios se alternando sozinhos. Clique para abrir em tela cheia.</p>
     <button type="button" id="comecar">▶ Começar em tela cheia</button>
+    <a href="./" style="color:#fff;font-size:18px;opacity:.85">← Voltar ao site</a>
   </div>
 
   <script src="config.js"></script>
@@ -208,12 +216,14 @@
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && trava !== null) manterAcesa(); });
     let ocioso;
-    addEventListener("mousemove", () => { document.body.classList.remove("ocioso"); clearTimeout(ocioso); ocioso = setTimeout(() => document.body.classList.add("ocioso"), 3000); });
+    ["mousemove", "touchstart", "keydown"].forEach((ev) => addEventListener(ev, () => { document.body.classList.remove("ocioso"); clearTimeout(ocioso); ocioso = setTimeout(() => document.body.classList.add("ocioso"), 3000); }));
+    ocioso = setTimeout(() => document.body.classList.add("ocioso"), 3000);
     $("comecar").addEventListener("click", async () => {
       $("inicio").remove();
       try { await document.documentElement.requestFullscreen(); } catch (e) { /* segue sem tela cheia */ }
       manterAcesa();
     });
+    addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.fullscreenElement) location.href = "./"; });
     // ?auto=1 começa direto (para TVs/players que abrem o link sozinhos)
     if (q.get("auto") === "1") $("inicio").remove();
 
