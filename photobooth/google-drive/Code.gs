@@ -1,5 +1,5 @@
 /**
- * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 5: com galeria e importação das fotos antigas)
+ * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 6: galeria rápida com índice)
  * ------------------------------------------------------------
  * Recebe a foto enviada pelo site (quando a pessoa toca em
  * "Enviar para o álbum da campanha") e salva numa pasta do Drive,
@@ -30,7 +30,8 @@ const NOMES_DIAS = {
 // Galeria do site: usa cópias leves das fotos, guardadas nesta subpasta.
 const PASTA_PREVIAS = "_galeria (cópias leves)";
 // true = a galeria só mostra as cópias marcadas com ESTRELA no Drive (moderação antes de aparecer).
-// false = toda foto enviada aparece. Para tirar uma foto da galeria, apague a cópia dela em "_galeria".
+// false = toda foto enviada aparece. Para tirar uma foto da galeria, apague a cópia dela em "_galeria"
+// (some em até 30 min; para sumir na hora, rode "reconstruirIndice" pelo editor).
 const SO_COM_ESTRELA = false;
 
 const UFS = ["AC","AP","AM","PA","RO","RR","TO","AL","BA","CE","MA","PB","PE","PI","RN","SE",
@@ -63,8 +64,9 @@ function doPost(e) {
     if (previa) {
       const pb = Utilities.base64Decode(previa);
       if (pb.length > 500 && pb.length < 300 * 1024 && (pb[0] & 0xff) === 0xff && (pb[1] & 0xff) === 0xd8) {
-        pastaPrevias().createFile(Utilities.newBlob(pb, "image/jpeg", nome));
-        CacheService.getScriptCache().remove("galeria_lista");
+        const arqPrevia = pastaPrevias().createFile(Utilities.newBlob(pb, "image/jpeg", nome));
+        try { CacheService.getScriptCache().put("pv_" + arqPrevia.getId(), "data:image/jpeg;base64," + previa, 1800); } catch (e) { /* ok */ }
+        indexar(arqPrevia.getId(), nome);
       }
     }
 
@@ -85,7 +87,7 @@ function falhou(id, motivo) {
 //   ?acao=status&id=...&callback=fn → responde fn({...}) dizendo se a foto chegou
 function doGet(e) {
   const p = (e && e.parameter) || {};
-  let corpo = { ok: true, servico: "photobooth-drive", versao: 5 };
+  let corpo = { ok: true, servico: "photobooth-drive", versao: 6 };
   if (p.acao === "galeria") {
     try { corpo = galeria(p); } catch (erro) { corpo = { ok: false, erro: String(erro) }; }
   } else if (p.acao === "status") {
@@ -108,40 +110,80 @@ function pastaPrevias() {
   return pegarOuCriar(pegarOuCriar(DriveApp.getRootFolder(), PASTA_RAIZ), PASTA_PREVIAS);
 }
 
-function listarPrevias() {
-  const cache = CacheService.getScriptCache();
-  const salvo = cache.get("galeria_lista");
-  if (salvo) return JSON.parse(salvo);
+// Índice das fotos mais recentes (guardado nas propriedades do script).
+// Assim a galeria responde rápido mesmo com milhares de fotos no Drive.
+const MAX_INDICE = 60;
+const tempoDoNome = function (nome) {
+  const m = nome.match(/_(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})_/);
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] + 3, +m[5], +m[6]) : 0; // nome está em horário de Brasília
+};
+
+function lerIndice() {
+  const bruto = PropertiesService.getScriptProperties().getProperty("indice_galeria");
+  if (bruto) return JSON.parse(bruto);
+  return reconstruirIndice();
+}
+
+function salvarIndice(lista) {
+  PropertiesService.getScriptProperties().setProperty("indice_galeria", JSON.stringify(lista.slice(0, MAX_INDICE)));
+}
+
+// Adiciona uma foto nova no topo do índice (chamado no envio).
+function indexar(id, nome) {
+  const m = nome.match(/^dia-(\d)_([A-Z]{2})_/);
+  if (!m) return;
+  const trava = LockService.getScriptLock();
+  try {
+    trava.waitLock(10000);
+    const lista = lerIndice().filter(function (f) { return f.id !== id; });
+    lista.unshift({ id: id, dia: Number(m[1]), uf: m[2], t: tempoDoNome(nome) || Date.now() });
+    salvarIndice(lista);
+  } finally {
+    trava.releaseLock();
+  }
+}
+
+// Monta o índice a partir da pasta "_galeria". Rode pelo editor se apagar/importar muitas fotos.
+function reconstruirIndice() {
   const lista = [];
   const arquivos = pastaPrevias().getFiles();
   while (arquivos.hasNext()) {
     const f = arquivos.next();
-    if (f.isTrashed()) continue;
-    if (SO_COM_ESTRELA && !f.isStarred()) continue;
-    const m = f.getName().match(/^dia-(\d)_([A-Z]{2})_/);
+    const nome = f.getName();
+    const m = nome.match(/^dia-(\d)_([A-Z]{2})_/);
     if (!m) continue;
-    lista.push({ id: f.getId(), dia: Number(m[1]), uf: m[2], t: f.getDateCreated().getTime() });
+    lista.push({ id: f.getId(), dia: Number(m[1]), uf: m[2], t: tempoDoNome(nome) });
   }
   lista.sort(function (a, b) { return b.t - a.t; });
-  try { cache.put("galeria_lista", JSON.stringify(lista), 60); } catch (e) { /* lista grande demais para o cache */ }
-  return lista;
+  salvarIndice(lista);
+  Logger.log("Índice da galeria montado com " + Math.min(lista.length, MAX_INDICE) + " fotos (de " + lista.length + ").");
+  return lista.slice(0, MAX_INDICE);
 }
 
 // Últimas fotos (cópias leves), mais recentes primeiro.
 function galeria(p) {
-  const limite = Math.min(24, Math.max(1, Number(p.limite) || 16));
-  const lista = listarPrevias();
+  const limite = Math.min(24, Math.max(1, Number(p.limite) || 12));
   const cache = CacheService.getScriptCache();
-  const fotos = lista.slice(0, limite).map(function (f) {
+  const indice = lerIndice();
+  const fotos = [], removidas = [];
+  for (let i = 0; i < indice.length && fotos.length < limite; i++) {
+    const f = indice[i];
     let img = cache.get("pv_" + f.id);
-    if (!img) {
-      const blob = DriveApp.getFileById(f.id).getBlob();
-      img = "data:" + (blob.getContentType() || "image/jpeg") + ";base64," + Utilities.base64Encode(blob.getBytes());
-      try { cache.put("pv_" + f.id, img, 21600); } catch (e) { /* imagem grande demais para o cache */ }
+    if (!img || SO_COM_ESTRELA) {
+      let arq = null;
+      try { arq = DriveApp.getFileById(f.id); } catch (e) { arq = null; }
+      if (!arq || arq.isTrashed()) { removidas.push(f.id); continue; } // apagada do Drive: sai da galeria
+      if (SO_COM_ESTRELA && !arq.isStarred()) continue;
+      if (!img) {
+        const blob = arq.getBlob();
+        img = "data:" + (blob.getContentType() || "image/jpeg") + ";base64," + Utilities.base64Encode(blob.getBytes());
+        try { cache.put("pv_" + f.id, img, 1800); } catch (e) { /* imagem grande demais para o cache */ }
+      }
     }
-    return { dia: f.dia, uf: f.uf, t: f.t, img: img };
-  });
-  return { ok: true, total: lista.length, fotos: fotos };
+    fotos.push({ dia: f.dia, uf: f.uf, t: f.t, img: img });
+  }
+  if (removidas.length) salvarIndice(indice.filter(function (f) { return removidas.indexOf(f.id) < 0; }));
+  return { ok: true, fotos: fotos };
 }
 
 // ------------------------------------------------------------------ FOTOS ANTIGAS
@@ -161,7 +203,7 @@ function importarFotosAntigas() {
     while (arquivos.hasNext()) {
       if (Date.now() - inicio > 5 * 60 * 1000) { // para antes do limite de 6 min do Google
         Logger.log("Pausado por tempo. Criadas: " + criadas + ". Rode de novo para continuar.");
-        CacheService.getScriptCache().remove("galeria_lista");
+        reconstruirIndice();
         return;
       }
       const f = arquivos.next();
@@ -176,7 +218,7 @@ function importarFotosAntigas() {
       }
     }
   }
-  CacheService.getScriptCache().remove("galeria_lista");
+  reconstruirIndice();
   Logger.log("Pronto! Cópias criadas: " + criadas + " · já existiam: " + puladas + " · falhas: " + falhas);
 }
 
@@ -193,6 +235,78 @@ function miniatura(arquivo) {
   const t = arquivo.getThumbnail(); // plano B: miniatura menor
   if (!t) throw new Error("o Drive ainda não gerou a miniatura desta foto");
   return t;
+}
+
+// ------------------------------------------------------------------ ENCONTRAR / JUNTAR FOTOS
+// 1) Rode "diagnostico": lista no registro TODAS as pastas do photobooth que existem no seu Drive
+//    (inclusive duplicadas e na lixeira) e quantas fotos tem em cada uma.
+function diagnostico() {
+  Logger.log("Conta que roda o script: " + Session.getEffectiveUser().getEmail());
+  const raizes = DriveApp.getFoldersByName(PASTA_RAIZ);
+  let n = 0;
+  while (raizes.hasNext()) {
+    const r = raizes.next(); n++;
+    Logger.log("📁 " + PASTA_RAIZ + " #" + n + (r.isTrashed() ? " (NA LIXEIRA)" : "") + " — id " + r.getId() + " — " + r.getUrl());
+    const subs = r.getFolders();
+    while (subs.hasNext()) {
+      const sp = subs.next();
+      Logger.log("    └ " + sp.getName() + (sp.isTrashed() ? " (NA LIXEIRA)" : "") + ": " + contarArquivos(sp) + " fotos");
+    }
+  }
+  if (!n) Logger.log("Nenhuma pasta \"" + PASTA_RAIZ + "\" encontrada nesta conta.");
+  // Pastas de dia soltas (fora da pasta principal)
+  for (let dia = 1; dia <= 7; dia++) {
+    const nome = "Dia " + dia + " - " + NOMES_DIAS[dia];
+    const it = DriveApp.getFoldersByName(nome);
+    let k = 0; while (it.hasNext()) { it.next(); k++; }
+    Logger.log("Pastas \"" + nome + "\" no Drive: " + k);
+  }
+  const lixo = DriveApp.searchFiles("title contains 'dia-' and mimeType = 'image/jpeg' and trashed = true");
+  let nl = 0; while (lixo.hasNext() && nl < 5000) { lixo.next(); nl++; }
+  Logger.log("Fotos do photobooth na lixeira: " + nl);
+}
+
+function contarArquivos(pasta) {
+  let n = 0; const it = pasta.getFiles();
+  while (it.hasNext()) { it.next(); n++; }
+  return n;
+}
+
+// 2) Rode "juntarPastas": MOVE (não apaga nada) as fotos de todas as pastas duplicadas do photobooth
+//    para a pasta principal, cada uma na pasta do seu dia. Pastas na lixeira são ignoradas.
+//    Se aparecer "Pausado por tempo", é só rodar de novo.
+function juntarPastas() {
+  const inicio = Date.now();
+  const principal = pegarOuCriar(DriveApp.getRootFolder(), PASTA_RAIZ);
+  let movidas = 0;
+  const origens = [];
+  const raizes = DriveApp.getFoldersByName(PASTA_RAIZ);
+  while (raizes.hasNext()) { const r = raizes.next(); if (r.getId() !== principal.getId() && !r.isTrashed()) origens.push(r); }
+  for (let dia = 1; dia <= 7; dia++) {
+    const it = DriveApp.getFoldersByName("Dia " + dia + " - " + NOMES_DIAS[dia]);
+    while (it.hasNext()) { const f = it.next(); if (!f.isTrashed()) origens.push(f); }
+  }
+  for (const pasta of origens) {
+    const destinoSub = function (nomeArquivo, nomePasta) {
+      if (nomePasta === PASTA_PREVIAS) return pastaPrevias();
+      const m = String(nomeArquivo).match(/^dia-(\d)_/);
+      return m ? pastaDoDia(Number(m[1])) : principal;
+    };
+    const pastas = [pasta];
+    const subs = pasta.getFolders(); while (subs.hasNext()) pastas.push(subs.next());
+    for (const p of pastas) {
+      const arquivos = p.getFiles();
+      while (arquivos.hasNext()) {
+        if (Date.now() - inicio > 5 * 60 * 1000) { Logger.log("Pausado por tempo. Movidas: " + movidas + ". Rode de novo."); reconstruirIndice(); return; }
+        const f = arquivos.next();
+        const destino = destinoSub(f.getName(), p.getName());
+        if (destino.getId() === p.getId()) continue;
+        f.moveTo(destino); movidas++;
+      }
+    }
+  }
+  reconstruirIndice();
+  Logger.log("Pronto! Fotos movidas para a pasta principal: " + movidas + ". Pasta: " + principal.getUrl());
 }
 
 function pastaDoDia(dia) {

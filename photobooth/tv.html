@@ -175,7 +175,7 @@
     addEventListener("resize", ajustar); ajustar();
 
     // ---------------- fotos (JSONP: o navegador não bloqueia)
-    function pedir(params, tempoMax = 25000) {
+    function pedir(params, tempoMax = 45000) {
       return new Promise((ok, erro) => {
         if (!URL_DRIVE) return erro(new Error("sem script"));
         const cb = "tvcb_" + Math.random().toString(36).slice(2);
@@ -191,8 +191,9 @@
     let fotos = [], atual = 0, vistas = new Set(), primeiraCarga = true;
     async function atualizarFotos() {
       try {
-        const r = await pedir({ acao: "galeria", limite: 24 });
+        const r = await pedir({ acao: "galeria", limite: 16 });
         if (!r || !r.ok || !Array.isArray(r.fotos)) return;
+        try { localStorage.setItem("pb-tv-galeria", JSON.stringify(r.fotos)); } catch (e) { /* sem espaço: tudo bem */ }
         const chave = (f) => `${f.t}-${f.uf}-${f.dia}`;
         const novas = r.fotos.map((f) => ({ ...f, k: chave(f), novo: !primeiraCarga && !vistas.has(chave(f)) }));
         novas.forEach((f) => vistas.add(f.k));
@@ -310,7 +311,16 @@
     // Recarrega a página a cada 6 h (pega atualizações do site e evita travar em TVs ligadas o dia todo)
     setTimeout(() => location.reload(), 6 * 3600 * 1000);
 
-    Promise.all([atualizarFotos(), atualizarRanking()]).then(cenaGaleria);
+    // Começa na hora com a última galeria guardada neste aparelho; as fotos novas chegam em seguida.
+    try {
+      const salvas = JSON.parse(localStorage.getItem("pb-tv-galeria") || "null");
+      if (Array.isArray(salvas) && salvas.length) {
+        fotos = salvas.map((f) => ({ ...f, k: `${f.t}-${f.uf}-${f.dia}`, novo: false }));
+        fotos.forEach((f) => vistas.add(f.k)); primeiraCarga = false; montar();
+      }
+    } catch (e) { /* sem cópia salva */ }
+    atualizarFotos();
+    atualizarRanking().then(cenaGaleria);
   })();
   </script>
 </body>

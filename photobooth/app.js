@@ -111,20 +111,22 @@
     if (!forcar && Date.now() - gl.ultima < 60000 && gl.fotos.length) return;
     gl.carregando = true;
     $("gl-secao").hidden = false;
+    // Mostra na hora a última galeria que este aparelho viu (as fotos não somem se o Google demorar).
+    if (!gl.fotos.length) {
+      try {
+        const salvas = JSON.parse(localStorage.getItem("pb-galeria") || "null");
+        if (salvas && Array.isArray(salvas.fotos) && salvas.fotos.length) aplicarGaleria(salvas.fotos);
+      } catch (e) { /* sem cópia salva */ }
+    }
     if (!gl.fotos.length) $("gl-status").textContent = "Carregando fotos…";
     try {
-      const r = await perguntarScript({ acao: "galeria", limite: 16 }, 20000);
+      const r = await perguntarScript({ acao: "galeria", limite: 12 }, 45000);
       if (!r || !r.ok || !Array.isArray(r.fotos)) throw new Error((r && r.erro) || "versão antiga");
       gl.ultima = Date.now();
-      const nomeDia = Object.fromEntries(CFG.dias.map((d) => [d.dia, d.nome]));
-      const novas = r.fotos.map((f) => ({ ...f, legenda: `Dia ${f.dia} · ${nomeDia[f.dia] || ""}${f.uf ? " · " + (Aderencia.porUF[f.uf] ? Aderencia.porUF[f.uf].nome : f.uf) : ""}` }));
-      const mudou = novas.map((f) => f.t).join() !== gl.fotos.map((f) => f.t).join();
-      gl.fotos = novas;
-      $("gl-palco").hidden = !gl.fotos.length;
-      $("gl-status").textContent = gl.fotos.length ? "" : "As fotos aparecem aqui assim que o pessoal começar a participar. Seja o primeiro! 📸";
-      if (mudou) { gl.atual = 0; desenharCarrossel(true); }
-      tocarCarrossel();
+      aplicarGaleria(r.fotos);
+      try { localStorage.setItem("pb-galeria", JSON.stringify({ t: Date.now(), fotos: r.fotos })); } catch (e) { /* sem espaço: tudo bem */ }
     } catch (e) {
+      console.warn("Galeria:", e);
       if (!gl.fotos.length) {
         $("gl-palco").hidden = true;
         $("gl-status").textContent = e.message === "versao-antiga" || e.message === "versão antiga"
@@ -134,6 +136,17 @@
     } finally {
       gl.carregando = false;
     }
+  }
+
+  function aplicarGaleria(lista) {
+    const nomeDia = Object.fromEntries(CFG.dias.map((d) => [d.dia, d.nome]));
+    const novas = lista.map((f) => ({ ...f, legenda: `Dia ${f.dia} · ${nomeDia[f.dia] || ""}${f.uf ? " · " + (Aderencia.porUF[f.uf] ? Aderencia.porUF[f.uf].nome : f.uf) : ""}` }));
+    const mudou = novas.map((f) => f.t).join() !== gl.fotos.map((f) => f.t).join();
+    gl.fotos = novas;
+    $("gl-palco").hidden = !gl.fotos.length;
+    $("gl-status").textContent = gl.fotos.length ? "" : "As fotos aparecem aqui assim que o pessoal começar a participar. Seja o primeiro! 📸";
+    if (mudou) { gl.atual = 0; desenharCarrossel(true); }
+    tocarCarrossel();
   }
 
   function desenharCarrossel(recriar) {
