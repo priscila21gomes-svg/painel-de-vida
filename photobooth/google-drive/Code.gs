@@ -266,6 +266,64 @@ function diagnostico() {
   Logger.log("Fotos do photobooth na lixeira: " + nl);
 }
 
+// 3) Rode "recuperarFotos": acha TODAS as fotos do photobooth (inclusive na lixeira ou dentro de
+//    pastas apagadas), tira da lixeira e coloca cada uma na pasta do seu dia. Não apaga nada.
+//    Se não der para restaurar um arquivo, faz uma cópia dele no lugar certo.
+//    Se aparecer "Pausado por tempo", é só rodar de novo: continua de onde parou.
+function recuperarFotos() {
+  const inicio = Date.now();
+  let pastasRest = 0, restauradas = 0, copiadas = 0, jaOk = 0, falhas = 0;
+
+  // Pastas do photobooth na lixeira → restaura
+  const pastasLixo = DriveApp.searchFolders("trashed = true");
+  while (pastasLixo.hasNext()) {
+    const f = pastasLixo.next(), n = f.getName();
+    if (n === PASTA_RAIZ || n === PASTA_PREVIAS || /^Dia \d - /.test(n)) {
+      try { f.setTrashed(false); pastasRest++; } catch (e) { Logger.log("Não restaurou pasta " + n + ": " + e); }
+    }
+  }
+
+  // Nomes que já estão no lugar certo (para não duplicar)
+  const jaTem = {};
+  const marcar = function (pasta, prefixo) { const it = pasta.getFiles(); while (it.hasNext()) jaTem[prefixo + it.next().getName()] = true; };
+  for (let d = 1; d <= 7; d++) marcar(pastaDoDia(d), "D");
+  marcar(pastaPrevias(), "P");
+
+  const consultas = ["title contains 'dia-' and trashed = true", "title contains 'dia-' and trashed = false"];
+  for (const q of consultas) {
+    const it = DriveApp.searchFiles(q);
+    while (it.hasNext()) {
+      if (Date.now() - inicio > 5 * 60 * 1000) {
+        Logger.log("Pausado por tempo. Restauradas: " + restauradas + " · copiadas: " + copiadas + ". Rode de novo.");
+        reconstruirIndice(); return;
+      }
+      const f = it.next(), nome = f.getName();
+      const m = nome.match(/^dia-(\d)_[A-Z]{2}_/);
+      if (!m) continue;
+      const ehPrevia = f.getSize() < 120 * 1024;          // cópia leve da galeria (~25 KB)
+      const chave = (ehPrevia ? "P" : "D") + nome;
+      const destino = ehPrevia ? pastaPrevias() : pastaDoDia(Number(m[1]));
+      try {
+        if (f.isTrashed()) { f.setTrashed(false); restauradas++; }
+        // Já está na pasta certa?
+        let noLugar = false; const pais = f.getParents();
+        while (pais.hasNext()) { if (pais.next().getId() === destino.getId()) noLugar = true; }
+        if (noLugar) { jaTem[chave] = true; jaOk++; continue; }
+        if (jaTem[chave]) { jaOk++; continue; }
+        try { f.moveTo(destino); } catch (e) { f.makeCopy(nome, destino); copiadas++; }
+        jaTem[chave] = true;
+      } catch (e) {
+        try { if (!jaTem[chave]) { f.makeCopy(nome, destino); jaTem[chave] = true; copiadas++; } }
+        catch (e2) { falhas++; Logger.log("Falhou: " + nome + " — " + e2); }
+      }
+    }
+  }
+  reconstruirIndice();
+  Logger.log("Pronto! Pastas restauradas: " + pastasRest + " · fotos tiradas da lixeira: " + restauradas +
+             " · copiadas: " + copiadas + " · já no lugar: " + jaOk + " · falhas: " + falhas);
+  Logger.log("Pasta principal: " + pegarOuCriar(DriveApp.getRootFolder(), PASTA_RAIZ).getUrl());
+}
+
 function contarArquivos(pasta) {
   let n = 0; const it = pasta.getFiles();
   while (it.hasNext()) { it.next(); n++; }
