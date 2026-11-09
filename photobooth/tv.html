@@ -59,6 +59,29 @@
   .vazio[hidden] { display: none; }
   .vazio p { margin: 0; font-size: 56px; font-weight: 700; max-width: 1200px; line-height: 1.1; }
 
+  /* ---------- Cena: ranking ao vivo ---------- */
+  .rk-topo { position: absolute; left: 70px; top: 46px; display: flex; align-items: center; gap: 22px; }
+  .rk-topo h1 { margin: 0; font-size: 72px; line-height: 1; text-shadow: 0 5px 0 rgba(142,10,31,.45); }
+  .rk-sub { position: absolute; left: 70px; top: 134px; font-size: 30px; font-weight: 600; }
+  .rk-paineis { position: absolute; left: 70px; right: 70px; top: 200px; bottom: 250px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+  .rk-painel { background: #fff; color: var(--texto); border-radius: 36px; padding: 32px 36px 20px; box-shadow: 0 10px 0 rgba(120,20,10,.3); overflow: hidden; }
+  .rk-painel h2 { margin: 0 0 14px; font-size: 40px; color: var(--laranja); }
+  .rk-lista { list-style: none; margin: 0; padding: 0; }
+  .rk-lista li { display: grid; grid-template-columns: 56px 1fr; gap: 12px; padding: 11px 0; border-top: 2px solid #f6e3dd; }
+  .rk-lista li:first-child { border-top: 0; }
+  .rk-pos { font-size: 30px; font-weight: 700; color: #9a7a70; }
+  .rk-lista li:first-child .rk-pos { color: var(--texto); }
+  .rk-linha { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .rk-nome { font-size: 31px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rk-pct { font-size: 30px; font-weight: 700; background: #fdf0ec; padding: 2px 16px; border-radius: 30px; font-variant-numeric: tabular-nums; }
+  .rk-trilho { display: block; height: 14px; border-radius: 8px; background: #fde7e1; margin-top: 10px; overflow: hidden; }
+  .rk-barra { display: block; height: 100%; width: 0; border-radius: 8px; background: var(--vermelho); transition: width 1.4s cubic-bezier(.22,.8,.26,1); }
+  .rk-info { min-width: 0; }
+  .rk-pct { flex: none; }
+  .rk-desc { display: block; font-size: 22px; font-weight: 600; color: #9a7a70; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rk-vazio { color: #9a7a70; font-size: 26px; padding-top: 14px; }
+  .rk-nota { position: absolute; left: 70px; bottom: 132px; right: 620px; font-size: 24px; font-weight: 600; opacity: .95; }
+
   /* Voltar ao site: aparece ao mexer o mouse/tocar */
   #voltar { position: fixed; top: 16px; left: 16px; z-index: 40; padding: 12px 22px; border-radius: 40px; background: #fff; color: var(--vermelho);
             font-weight: 700; font-size: 18px; text-decoration: none; box-shadow: 0 6px 16px rgba(0,0,0,.3); transition: opacity .4s; }
@@ -94,7 +117,23 @@
       </div>
     </section>
 
-    <!-- CENA 2: cartaz dos desafios com QR code -->
+    <!-- CENA 2: ranking ao vivo -->
+    <section class="cena fora" id="cena-ranking">
+      <div class="rk-topo"><h1>📊 Aderência pelo Brasil</h1><span class="ao-vivo"><i></i> AO VIVO</span></div>
+      <div class="rk-sub">Qual região, estado e dia estão bombando no Peak Season?</div>
+      <div class="rk-paineis">
+        <article class="rk-painel"><h2>Ranking por região</h2><ol class="rk-lista" id="rk-regioes"></ol></article>
+        <article class="rk-painel"><h2>Top 5 estados</h2><ol class="rk-lista" id="rk-estados"></ol></article>
+        <article class="rk-painel"><h2>Top 5 dias</h2><ol class="rk-lista" id="rk-dias"></ol></article>
+      </div>
+      <p class="rk-nota">Percentuais em relação ao total de participações. Cada pessoa conta uma vez por dia.</p>
+      <div class="qr-canto">
+        <img src="img/qrcode.svg" alt="QR code do photobooth" />
+        <div><b>Coloque seu<br />estado no topo!</b><span>Aponte a câmera e participe<br /><em>#PeakSeasonSPX</em></span></div>
+      </div>
+    </section>
+
+    <!-- CENA 3: cartaz dos desafios com QR code -->
     <section class="cena fora" id="cena-cartaz">
       <iframe src="gestao-visual-tv.html?ao-vivo=1" title="Desafios e QR code" scrolling="no" tabindex="-1"></iframe>
     </section>
@@ -110,6 +149,7 @@
   </div>
 
   <script src="config.js"></script>
+  <script src="aderencia.js"></script>
   <script>
   (() => {
     "use strict";
@@ -117,6 +157,7 @@
     const q = new URLSearchParams(location.search);
     const T_FOTOS = Math.max(10, Number(q.get("fotos")) || 30);   // segundos de galeria
     const T_CARTAZ = Math.max(5, Number(q.get("cartaz")) || 15);  // segundos de cartaz
+    const T_RANKING = Math.max(5, Number(q.get("ranking")) || 15); // segundos de ranking
     const T_FOTO = 3500;                                          // ms por foto no carrossel
     const URL_DRIVE = (CFG.drive && CFG.drive.urlScript) || "";
     const UF = { AC:"Acre",AP:"Amapá",AM:"Amazonas",PA:"Pará",RO:"Rondônia",RR:"Roraima",TO:"Tocantins",AL:"Alagoas",BA:"Bahia",CE:"Ceará",
@@ -189,22 +230,61 @@
       $("legenda").textContent = f ? `Dia ${f.dia} · ${nomeDia[f.dia] || ""}${f.uf ? " · " + (UF[f.uf] || f.uf) : ""}` : "";
     }
 
-    // ---------------- ciclo: galeria (30 s) ↔ cartaz (15 s)
+    // ---------------- ranking ao vivo
+    const fmtPct = new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    let rk = null;
+    async function atualizarRanking() {
+      try {
+        const { linhas } = await Aderencia.carregar();
+        rk = Aderencia.resumir(linhas, CFG.dias);
+      } catch (e) { /* mantém o último ranking carregado */ }
+    }
+    function listaRanking(el, itens, total) {
+      el.innerHTML = "";
+      if (!total || !itens.length) { el.innerHTML = '<li class="rk-vazio">As primeiras participações aparecem aqui!</li>'; return; }
+      const max = Math.max(1, ...itens.map((i) => i.valor));
+      itens.forEach((i) => {
+        const pos = itens.findIndex((x) => x.valor === i.valor) + 1;
+        const li = document.createElement("li");
+        li.innerHTML = '<span class="rk-pos"></span><span class="rk-info"><span class="rk-linha"><span class="rk-nome"></span><span class="rk-pct"></span></span><span class="rk-desc"></span><span class="rk-trilho"><span class="rk-barra"></span></span></span>';
+        li.querySelector(".rk-pos").textContent = `${pos}º`;
+        li.querySelector(".rk-nome").textContent = i.rotulo;
+        li.querySelector(".rk-pct").textContent = fmtPct.format(i.valor / total);
+        const desc = li.querySelector(".rk-desc");
+        if (i.desc) desc.textContent = i.desc; else desc.remove();
+        el.appendChild(li);
+        // barra cresce ao entrar na tela
+        requestAnimationFrame(() => requestAnimationFrame(() => { li.querySelector(".rk-barra").style.width = `${(i.valor / max) * 100}%`; }));
+      });
+    }
+    function cenaRanking() {
+      clearInterval(girar);
+      mostrarCena("cena-ranking");
+      const r = rk || { total: 0, regioes: [], estados: [], dias: [] };
+      listaRanking($("rk-regioes"), r.regioes, r.total);
+      listaRanking($("rk-estados"), r.estados, r.total);
+      listaRanking($("rk-dias"), r.dias.map((d) => ({ ...d, desc: d.sub })), r.total);
+      setTimeout(cenaCartaz, T_RANKING * 1000);
+    }
+    function mostrarCena(id) {
+      for (const c of ["cena-galeria", "cena-ranking", "cena-cartaz"]) $(c).classList.toggle("fora", c !== id);
+    }
+
+    // ---------------- ciclo: galeria (30 s) → ranking (15 s) → cartaz (15 s)
     let girar = null;
     function cenaGaleria() {
-      $("cena-cartaz").classList.add("fora");
-      $("cena-galeria").classList.remove("fora");
+      mostrarCena("cena-galeria");
+      atualizarRanking(); // busca o ranking enquanto as fotos passam
       const barra = $("barra");
       barra.style.transition = "none"; barra.style.width = "0";
       requestAnimationFrame(() => requestAnimationFrame(() => { barra.style.transition = `width ${T_FOTOS}s linear`; barra.style.width = "100%"; }));
       clearInterval(girar);
       girar = setInterval(() => { if (fotos.length > 1) { atual = (atual + 1) % fotos.length; posicionar(); } }, T_FOTO);
-      setTimeout(cenaCartaz, T_FOTOS * 1000);
+      setTimeout(cenaRanking, T_FOTOS * 1000);
     }
     function cenaCartaz() {
       clearInterval(girar);
-      $("cena-galeria").classList.add("fora");
-      $("cena-cartaz").classList.remove("fora");
+      mostrarCena("cena-cartaz");
       atualizarFotos(); // busca fotos novas enquanto o cartaz está na tela
       setTimeout(cenaGaleria, T_CARTAZ * 1000);
     }
@@ -230,7 +310,7 @@
     // Recarrega a página a cada 6 h (pega atualizações do site e evita travar em TVs ligadas o dia todo)
     setTimeout(() => location.reload(), 6 * 3600 * 1000);
 
-    atualizarFotos().then(cenaGaleria);
+    Promise.all([atualizarFotos(), atualizarRanking()]).then(cenaGaleria);
   })();
   </script>
 </body>
