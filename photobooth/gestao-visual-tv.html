@@ -91,6 +91,17 @@
   .hashtag { background: #fff; color: var(--vermelho); font-weight: 700; font-size: 36px; padding: 10px 36px; border-radius: 60px; box-shadow: 0 6px 0 rgba(120,20,10,.3); }
   .bora { font-size: 42px; font-weight: 700; line-height: 1; display: flex; align-items: baseline; gap: 18px; }
   .bora em { font-style: normal; color: var(--amarelo); font-size: 34px; }
+
+  /* ---- modo ao vivo (usado pelo Modo TV): hoje / concluído / bloqueado ---- */
+  .dia.hoje { outline: 6px solid #fff; box-shadow: 0 0 0 12px rgba(255,199,44,.55), 0 6px 0 rgba(120,20,10,.3); transform: translateY(-8px); }
+  .dia.hoje::before { content: "HOJE!"; position: absolute; top: -18px; left: 50%; transform: translateX(-50%); z-index: 3;
+    background: #fff; color: var(--vermelho); font-size: 16px; font-weight: 700; padding: 3px 14px; border-radius: 20px; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
+  .dia.hoje .fita { display: none; }
+  .dia.concluido .dia-corpo, .dia.bloqueado .dia-corpo { opacity: .45; filter: grayscale(.6); }
+  .selo-dia { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%); width: 70px; height: 70px; border-radius: 50%;
+    display: grid; place-items: center; z-index: 2; box-shadow: 0 6px 14px rgba(80,10,0,.35); }
+  .selo-dia.ok { background: #2fa84f; color: #fff; font-size: 44px; font-weight: 700; border: 4px solid #fff; }
+  .selo-dia.tranca { background: #fff; font-size: 34px; border: 4px solid var(--vermelho); }
 </style>
 </head>
 <body>
@@ -142,5 +153,30 @@
       <div class="bora">Bora participar? <em>Juntos no maior desafio do ano!</em></div>
     </footer>
   </main>
+  <script src="config.js"></script>
+  <script>
+    // ?ao-vivo=1: destaca o desafio de hoje, ✓ nos concluídos e 🔒 nos próximos (horário de Brasília).
+    (function () {
+      if (!/[?&]ao-vivo=1/.test(location.search) || !window.PHOTOBOOTH_CONFIG) return;
+      var CFG = window.PHOTOBOOTH_CONFIG, fechaH = CFG.horaFechamento == null ? 6 : CFG.horaFechamento;
+      function marcar() {
+        var cards = document.querySelectorAll(".cal .dia"), agora = Date.now();
+        CFG.dias.forEach(function (d, i) {
+          var c = cards[i]; if (!c) return;
+          var p = d.data.split("-").map(Number), abre = Date.UTC(p[0], p[1] - 1, p[2], 3), fecha = abre + (24 + fechaH) * 3600e3;
+          var fase = agora < abre ? "bloqueado" : agora >= fecha ? "concluido" : "hoje";
+          c.classList.remove("hoje", "concluido", "bloqueado"); c.classList.add(fase);
+          var selo = c.querySelector(".selo-dia"); if (selo) selo.remove();
+          if (fase !== "hoje") {
+            selo = document.createElement("span");
+            selo.className = "selo-dia " + (fase === "concluido" ? "ok" : "tranca");
+            selo.textContent = fase === "concluido" ? "✓" : "🔒";
+            c.appendChild(selo);
+          }
+        });
+      }
+      marcar(); setInterval(marcar, 60000);
+    })();
+  </script>
 </body>
 </html>
