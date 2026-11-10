@@ -469,7 +469,7 @@
     desligarCamera();
     $("aviso-camera").hidden = true;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      avisoCamera("Este navegador não libera a câmera. Use o botão Galeria ou abra o link no Safari/Chrome.");
+      avisoCamera("Este navegador não libera a câmera. Abra o link no Safari ou no Chrome.");
       return;
     }
     try {
@@ -487,8 +487,8 @@
     } catch (e) {
       const negado = e && (e.name === "NotAllowedError" || e.name === "SecurityError");
       avisoCamera(negado
-        ? "Você não permitiu o uso da câmera. Libere o acesso nas configurações do navegador ou use o botão Galeria."
-        : "Não encontramos uma câmera disponível. Use o botão Galeria para escolher uma foto.");
+        ? "Você não permitiu o uso da câmera. Libere o acesso nas configurações do navegador e toque em Tentar de novo."
+        : "Não encontramos uma câmera disponível neste aparelho. Tente pelo celular.");
     }
   }
   function desligarCamera() {
@@ -840,7 +840,6 @@
       st.timer = tempos[(tempos.indexOf(st.timer) + 1) % tempos.length];
       $("timer-txt").textContent = st.timer ? `${st.timer}s` : "Sem";
     });
-    $("galeria").addEventListener("change", (e) => { lerGaleria(e.target.files[0]); e.target.value = ""; });
     $("usar-foto").addEventListener("click", () => { if (st.still) gerarResultado(st.still, false); });
     $("compartilhar").addEventListener("click", compartilhar);
     $("baixar").addEventListener("click", salvarNoCelular);
