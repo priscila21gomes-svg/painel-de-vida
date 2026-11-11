@@ -34,6 +34,7 @@ const PASTA_PREVIAS = "_galeria (cópias leves)";
 // Login do admin: guardamos só o "hash" (impressão digital) de "email|senha", nunca a senha.
 // Para trocar a senha: no site, abra admin.html, digite o novo e-mail/senha e clique em
 // "Gerar código"; cole o código aqui no lugar do atual e implante uma nova versão.
+// Mais de um login: separe os códigos por vírgula ("codigo1,codigo2").
 const ADMIN_HASH = "COLE_AQUI_O_CODIGO_GERADO_NO_ADMIN";
 
 const UFS = ["AC","AP","AM","PA","RO","RR","TO","AL","BA","CE","MA","PB","PE","PI","RN","SE",
@@ -220,8 +221,9 @@ function admin(p) {
   if (p.acao === "login") {
     const erros = Number(cache.get("login_erros") || 0);
     if (erros >= 10) return { ok: false, erro: "Muitas tentativas. Espere 10 minutos." };
-    if (!/^[0-9a-f]{64}$/.test(ADMIN_HASH)) return { ok: false, erro: "A senha do admin ainda não foi configurada no script (ADMIN_HASH). Cole o Code.gs que veio com o seu login." };
-    if (String(p.h || "").toLowerCase() !== ADMIN_HASH) {
+    const hashes = String(ADMIN_HASH).split(",").map(function (x) { return x.trim(); });
+    if (!hashes.some(function (x) { return /^[0-9a-f]{64}$/.test(x); })) return { ok: false, erro: "A senha do admin ainda não foi configurada no script (ADMIN_HASH). Cole o Code.gs que veio com o seu login." };
+    if (hashes.indexOf(String(p.h || "").toLowerCase()) < 0) {
       cache.put("login_erros", String(erros + 1), 600);
       return { ok: false, erro: "E-mail ou senha incorretos." };
     }
