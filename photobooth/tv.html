@@ -155,7 +155,7 @@
     "use strict";
     const CFG = window.PHOTOBOOTH_CONFIG;
     const q = new URLSearchParams(location.search);
-    const T_FOTOS = Math.max(10, Number(q.get("fotos")) || 30);   // segundos de galeria
+    const T_FOTOS = Math.max(10, Number(q.get("fotos")) || 60);   // segundos de galeria
     const T_CARTAZ = Math.max(5, Number(q.get("cartaz")) || 15);  // segundos de cartaz
     const T_RANKING = Math.max(5, Number(q.get("ranking")) || 15); // segundos de ranking
     const T_FOTO = 3500;                                          // ms por foto no carrossel
@@ -271,7 +271,7 @@
       for (const c of ["cena-galeria", "cena-ranking", "cena-cartaz"]) $(c).classList.toggle("fora", c !== id);
     }
 
-    // ---------------- ciclo: galeria (30 s) → ranking (15 s) → cartaz (15 s)
+    // ---------------- ciclo: galeria (60 s) → ranking (15 s) → cartaz (15 s)
     let girar = null;
     function cenaGaleria() {
       mostrarCena("cena-galeria");

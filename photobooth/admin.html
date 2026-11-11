@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Photobooth Admin</title>
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --laranja: #ee4d2d; --vermelho: #c8102e; --amarelo: #ffc72c; --texto: #3a1a12; --verde: #1f8a3c; }
+  * { box-sizing: border-box; }
+  html { background: #ee4d2d; }
+  body { margin: 0; min-height: 100vh; font-family: "Fredoka", system-ui, sans-serif; color: #fff;
+         background: linear-gradient(165deg, #ff9a52 0%, #f45b32 50%, #d6361c 100%); background-attachment: fixed; }
+  button, input { font: inherit; }
+  [hidden] { display: none !important; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* login */
+  .caixa { background: #fff; color: var(--texto); border-radius: 24px; padding: 26px 22px; width: 100%; max-width: 400px;
+           margin: 8vh auto 0; box-shadow: 0 8px 0 rgba(120,20,10,.25); display: flex; flex-direction: column; gap: 12px; }
+  .caixa h1 { margin: 0; color: var(--laranja); font-size: 26px; }
+  .caixa p { margin: 0; color: #6b4a40; font-size: 14px; }
+  label { font-weight: 600; font-size: 14px; }
+  input { width: 100%; padding: 12px 14px; border-radius: 14px; border: 2px solid #f3c9bd; background: #fff8f5; color: var(--texto); font-size: 16px; }
+  input:focus { outline: 3px solid var(--amarelo); border-color: var(--laranja); }
+  .btn { border: 0; border-radius: 999px; padding: 13px 20px; font-weight: 700; font-size: 16px; cursor: pointer; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn-amarelo { background: var(--amarelo); color: var(--vermelho); box-shadow: 0 4px 0 #d79b00; }
+  .erro { color: var(--vermelho); font-weight: 600; font-size: 14px; min-height: 1.2em; margin: 0; }
+  .voltar { color: #fff; font-weight: 600; text-align: center; }
+
+  /* painel */
+  .topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .topo h1 { margin: 0; font-size: 26px; }
+  .topo a, .topo button { color: #fff; background: rgba(120,20,10,.3); border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; text-decoration: none; cursor: pointer; }
+  .abas { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(120,20,10,.3); align-self: flex-start; }
+  .aba { border: 0; border-radius: 999px; padding: 9px 16px; background: transparent; color: #fff; font-weight: 600; cursor: pointer; }
+  .aba.ativa { background: #fff; color: var(--vermelho); }
+  .aba b { display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--amarelo); color: var(--vermelho); font-size: 13px; }
+  .dica { margin: 0; font-size: 14px; }
+  .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .item { background: #fff; color: var(--texto); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 5px 0 rgba(120,20,10,.22); transition: opacity .3s, transform .3s; }
+  .item.saindo { opacity: 0; transform: scale(.92); }
+  .item img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; display: block; background: #fbe3da; cursor: zoom-in; }
+  .info { padding: 8px 10px 4px; font-size: 13px; font-weight: 600; line-height: 1.25; }
+  .info small { display: block; color: #9a7a70; font-weight: 500; }
+  .acoes { display: flex; gap: 6px; padding: 8px; }
+  .acoes button { flex: 1; border: 0; border-radius: 12px; padding: 10px 6px; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .ok { background: var(--verde); color: #fff; }
+  .nao { background: #fde7e1; color: var(--vermelho); }
+  .status { text-align: center; font-weight: 600; margin: 0; }
+  .mais { align-self: center; background: #fff; color: var(--vermelho); }
+  .visor { position: fixed; inset: 0; background: rgba(20,5,2,.9); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; cursor: zoom-out; }
+  .visor img { max-width: 100%; max-height: 100%; border-radius: 14px; }
+</style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <main id="tela-login">
+    <form class="caixa" id="form-login" autocomplete="on">
+      <h1>🔒 Acesso admin</h1>
+      <p>Aprovação das fotos da galeria do Photobooth Peak Season.</p>
+      <label for="email">E-mail</label>
+      <input type="email" id="email" autocomplete="username" required />
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" autocomplete="current-password" required />
+      <p class="erro" id="erro-login" role="alert"></p>
+      <button class="btn btn-amarelo" id="entrar" type="submit">Entrar</button>
+      <button class="btn" type="button" id="gerar" style="background:#f3e9e6;color:#6b4a40;font-size:13px;padding:8px">Gerar código para trocar a senha</button>
+    </form>
+    <a class="voltar" href="./">← Voltar ao site</a>
+  </main>
+
+  <!-- PAINEL -->
+  <main id="tela-painel" hidden>
+    <div class="topo">
+      <h1>📸 Aprovação de fotos</h1>
+      <div style="display:flex;gap:8px"><a href="./">Ver site</a><button type="button" id="sair">Sair</button></div>
+    </div>
+    <div class="abas" role="tablist">
+      <button class="aba ativa" type="button" data-lista="pendentes">⏳ Pendentes <b id="n-pend">–</b></button>
+      <button class="aba" type="button" data-lista="aprovadas">✅ Na galeria <b id="n-apr">–</b></button>
+    </div>
+    <p class="dica" id="dica">Só as fotos aprovadas aparecem na galeria do site e no Modo TV. Recusar não apaga a foto do Drive.</p>
+    <div class="grade" id="grade"></div>
+    <p class="status" id="status"></p>
+    <button class="btn mais" id="mais" type="button" hidden>Carregar mais</button>
+  </main>
+
+  <div class="visor" id="visor" hidden><img id="visor-img" alt="" /></div>
+
+  <script src="config.js"></script>
+  <script>
+  (() => {
+    "use strict";
+    const CFG = window.PHOTOBOOTH_CONFIG;
+    const URL_DRIVE = (CFG.drive && CFG.drive.urlScript) || "";
+    const nomeDia = Object.fromEntries(CFG.dias.map((d) => [d.dia, d.nome]));
+    const $ = (id) => document.getElementById(id);
+    const guardar = { get: (k) => { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+                      set: (k, v) => { try { v === null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} } };
+
+    // Chamada ao script por <script> (o navegador não bloqueia)
+    function pedir(params, tempoMax = 45000) {
+      return new Promise((ok, erro) => {
+        const cb = "adcb_" + Math.random().toString(36).slice(2);
+        const tag = document.createElement("script");
+        const limpar = () => { clearTimeout(t); delete window[cb]; tag.remove(); };
+        const t = setTimeout(() => { limpar(); erro(new Error("O Google demorou para responder. Tente de novo.")); }, tempoMax);
+        window[cb] = (d) => { limpar(); ok(d); };
+        tag.onerror = () => { limpar(); erro(new Error("Não foi possível falar com o script do Google.")); };
+        tag.onload = () => setTimeout(() => { if (window[cb]) { limpar(); erro(new Error("O script do Google precisa ser atualizado para a versão 7.")); } }, 50);
+        tag.src = `${URL_DRIVE}?${new URLSearchParams({ ...params, callback: cb, _: Date.now() })}`;
+        document.head.appendChild(tag);
+      });
+    }
+    async function sha256(txt) {
+      const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(txt));
+      return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+    }
+    const credencial = () => sha256(`${$("email").value.trim().toLowerCase()}|${$("senha").value}`);
+
+    // ---------------- login
+    $("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("erro-login").textContent = "";
+      $("entrar").disabled = true; $("entrar").textContent = "Entrando…";
+      try {
+        const r = await pedir({ acao: "login", h: await credencial() });
+        if (!r.ok) throw new Error(r.erro || "Não foi possível entrar.");
+        guardar.set("pb-admin", r.token);
+        $("senha").value = "";
+        abrirPainel();
+      } catch (err) {
+        $("erro-login").textContent = err.message;
+      } finally {
+        $("entrar").disabled = false; $("entrar").textContent = "Entrar";
+      }
+    });
+    $("gerar").addEventListener("click", async () => {
+      if (!$("email").value || !$("senha").value) { $("erro-login").textContent = "Preencha o novo e-mail e a nova senha."; return; }
+      const h = await credencial();
+      prompt("Cole este código no Code.gs, em ADMIN_HASH, e implante uma nova versão:", h);
+    });
+    $("sair").addEventListener("click", () => { guardar.set("pb-admin", null); location.reload(); });
+
+    // ---------------- painel
+    let lista = "pendentes", pular = 0, total = 0, carregando = false;
+    const token = () => guardar.get("pb-admin");
+    function sessaoExpirou() {
+      guardar.set("pb-admin", null);
+      $("tela-painel").hidden = true; $("tela-login").hidden = false;
+      $("erro-login").textContent = "Sua sessão expirou. Entre de novo.";
+    }
+    function abrirPainel() {
+      $("tela-login").hidden = true; $("tela-painel").hidden = false;
+      carregar(true);
+    }
+    function contadores(r) {
+      if (typeof r.pendentes === "number") $("n-pend").textContent = r.pendentes;
+      if (typeof r.aprovadas === "number") $("n-apr").textContent = r.aprovadas;
+    }
+    async function carregar(recomecar) {
+      if (carregando) return;
+      carregando = true;
+      if (recomecar) { pular = 0; $("grade").innerHTML = ""; }
+      $("status").textContent = "Carregando fotos…"; $("mais").hidden = true;
+      try {
+        const r = await pedir({ acao: "admin_lista", token: token(), lista, pular });
+        if (!r.ok) { if (r.erro === "sessao") return sessaoExpirou(); throw new Error(r.erro); }
+        contadores(r);
+        total = r.total;
+        r.fotos.forEach(cartao);
+        pular += r.fotos.length;
+        $("status").textContent = total ? "" : (lista === "pendentes" ? "🎉 Nenhuma foto esperando aprovação." : "Nenhuma foto aprovada ainda.");
+        $("mais").hidden = pular >= total;
+      } catch (err) {
+        $("status").textContent = "⚠️ " + err.message;
+      } finally {
+        carregando = false;
+      }
+    }
+    function quando(t) {
+      if (!t) return "";
+      return new Date(t).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+    function cartao(f) {
+      const el = document.createElement("article");
+      el.className = "item";
+      el.innerHTML = `<img alt="" loading="lazy" /><div class="info"></div><div class="acoes"></div>`;
+      const img = el.querySelector("img");
+      if (f.img) img.src = f.img;
+      img.addEventListener("click", () => { $("visor-img").src = f.img; $("visor").hidden = false; });
+      el.querySelector(".info").innerHTML = `Dia ${f.dia} · ${f.uf}<small></small>`;
+      el.querySelector(".info small").textContent = `${nomeDia[f.dia] || ""} · ${quando(f.t)}`;
+      const acoes = el.querySelector(".acoes");
+      const botao = (txt, cls, decisao) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = cls; b.textContent = txt;
+        b.addEventListener("click", () => moderar(f, decisao, el, acoes));
+        acoes.appendChild(b);
+      };
+      if (lista === "pendentes") { botao("✅ Aprovar", "ok", "aprovar"); botao("❌ Recusar", "nao", "recusar"); }
+      else botao("🗑 Tirar da galeria", "nao", "remover");
+      $("grade").appendChild(el);
+    }
+    async function moderar(f, decisao, el, acoes) {
+      acoes.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+      try {
+        const r = await pedir({ acao: "moderar", token: token(), id: f.id, decisao });
+        if (!r.ok) { if (r.erro === "sessao") return sessaoExpirou(); throw new Error(r.erro); }
+        contadores(r);
+        el.classList.add("saindo");
+        setTimeout(() => {
+          el.remove(); pular = Math.max(0, pular - 1); total = Math.max(0, total - 1);
+          if (!$("grade").children.length) carregar(true);
+        }, 300);
+      } catch (err) {
+        acoes.querySelectorAll("button").forEach((b) => { b.disabled = false; });
+        alert("Não deu certo: " + err.message);
+      }
+    }
+    document.querySelectorAll(".aba").forEach((a) => a.addEventListener("click", () => {
+      if (a.dataset.lista === lista) return;
+      lista = a.dataset.lista;
+      document.querySelectorAll(".aba").forEach((x) => x.classList.toggle("ativa", x === a));
+      carregar(true);
+    }));
+    $("mais").addEventListener("click", () => carregar(false));
+    $("visor").addEventListener("click", () => { $("visor").hidden = true; });
+    // Recarrega a fila sozinha a cada 2 minutos (fotos novas chegando)
+    setInterval(() => { if (!$("tela-painel").hidden && lista === "pendentes" && !document.hidden && !carregando) carregar(true); }, 120000);
+
+    if (token()) abrirPainel();
+  })();
+  </script>
+</body>
+</html>

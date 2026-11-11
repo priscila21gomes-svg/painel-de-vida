@@ -1,5 +1,5 @@
 /**
- * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 6: galeria rápida com índice)
+ * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 7: galeria com aprovação do admin)
  * ------------------------------------------------------------
  * Recebe a foto enviada pelo site (quando a pessoa toca em
  * "Enviar para o álbum da campanha") e salva numa pasta do Drive,
@@ -29,10 +29,12 @@ const NOMES_DIAS = {
 };
 // Galeria do site: usa cópias leves das fotos, guardadas nesta subpasta.
 const PASTA_PREVIAS = "_galeria (cópias leves)";
-// true = a galeria só mostra as cópias marcadas com ESTRELA no Drive (moderação antes de aparecer).
-// false = toda foto enviada aparece. Para tirar uma foto da galeria, apague a cópia dela em "_galeria"
-// (some em até 30 min; para sumir na hora, rode "reconstruirIndice" pelo editor).
-const SO_COM_ESTRELA = false;
+// MODERAÇÃO: toda foto enviada entra como PENDENTE e só aparece na galeria (site e TV)
+// depois de aprovada na página Admin do site (admin.html).
+// Login do admin: guardamos só o "hash" (impressão digital) de "email|senha", nunca a senha.
+// Para trocar a senha: no site, abra admin.html, digite o novo e-mail/senha e clique em
+// "Gerar código"; cole o código aqui no lugar do atual e implante uma nova versão.
+const ADMIN_HASH = "COLE_AQUI_O_CODIGO_GERADO_NO_ADMIN";
 
 const UFS = ["AC","AP","AM","PA","RO","RR","TO","AL","BA","CE","MA","PB","PE","PI","RN","SE",
              "DF","GO","MT","MS","ES","MG","RJ","SP","PR","RS","SC"];
@@ -87,9 +89,11 @@ function falhou(id, motivo) {
 //   ?acao=status&id=...&callback=fn → responde fn({...}) dizendo se a foto chegou
 function doGet(e) {
   const p = (e && e.parameter) || {};
-  let corpo = { ok: true, servico: "photobooth-drive", versao: 6 };
+  let corpo = { ok: true, servico: "photobooth-drive", versao: 7 };
   if (p.acao === "galeria") {
     try { corpo = galeria(p); } catch (erro) { corpo = { ok: false, erro: String(erro) }; }
+  } else if (p.acao === "login" || p.acao === "admin_lista" || p.acao === "moderar") {
+    try { corpo = admin(p); } catch (erro) { corpo = { ok: false, erro: String(erro) }; }
   } else if (p.acao === "status") {
     const id = /^[a-z0-9-]{8,40}$/.test(String(p.id || "")) ? String(p.id) : "";
     const v = id ? CacheService.getScriptCache().get("up_" + id) : null;
@@ -110,80 +114,160 @@ function pastaPrevias() {
   return pegarOuCriar(pegarOuCriar(DriveApp.getRootFolder(), PASTA_RAIZ), PASTA_PREVIAS);
 }
 
-// Índice das fotos mais recentes (guardado nas propriedades do script).
-// Assim a galeria responde rápido mesmo com milhares de fotos no Drive.
+// Índices guardados nas propriedades do script (rápido mesmo com milhares de fotos no Drive):
+//   indice_galeria   → fotos APROVADAS (aparecem no site e na TV)
+//   indice_pendentes → fotos esperando aprovação
+// O status de cada foto também fica gravado na DESCRIÇÃO do arquivo no Drive
+// ("aprovada" / "recusada" / vazio = pendente), então nada se perde se o índice for refeito.
 const MAX_INDICE = 60;
+const MAX_PENDENTES = 120;
 const tempoDoNome = function (nome) {
   const m = nome.match(/_(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})_/);
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] + 3, +m[5], +m[6]) : 0; // nome está em horário de Brasília
 };
 
-function lerIndice() {
-  const bruto = PropertiesService.getScriptProperties().getProperty("indice_galeria");
-  if (bruto) return JSON.parse(bruto);
-  return reconstruirIndice();
+function lerLista(chave) {
+  const props = PropertiesService.getScriptProperties();
+  if (!props.getProperty("moderacao_v7")) reconstruirIndice(); // 1ª vez na versão 7
+  const bruto = props.getProperty(chave);
+  return bruto ? JSON.parse(bruto) : [];
 }
-
-function salvarIndice(lista) {
-  PropertiesService.getScriptProperties().setProperty("indice_galeria", JSON.stringify(lista.slice(0, MAX_INDICE)));
+function salvarLista(chave, lista, max) {
+  PropertiesService.getScriptProperties().setProperty(chave, JSON.stringify(lista.slice(0, max)));
 }
+function lerIndice() { return lerLista("indice_galeria"); }
+function salvarIndice(lista) { salvarLista("indice_galeria", lista, MAX_INDICE); }
 
-// Adiciona uma foto nova no topo do índice (chamado no envio).
+// Foto nova enviada pelo site → entra como pendente.
 function indexar(id, nome) {
   const m = nome.match(/^dia-(\d)_([A-Z]{2})_/);
   if (!m) return;
   const trava = LockService.getScriptLock();
   try {
     trava.waitLock(10000);
-    const lista = lerIndice().filter(function (f) { return f.id !== id; });
+    const lista = lerLista("indice_pendentes").filter(function (f) { return f.id !== id; });
     lista.unshift({ id: id, dia: Number(m[1]), uf: m[2], t: tempoDoNome(nome) || Date.now() });
-    salvarIndice(lista);
+    salvarLista("indice_pendentes", lista, MAX_PENDENTES);
   } finally {
     trava.releaseLock();
   }
 }
 
-// Monta o índice a partir da pasta "_galeria". Rode pelo editor se apagar/importar muitas fotos.
+// Monta os índices a partir da pasta "_galeria", lendo o status gravado em cada arquivo.
+// Na primeira vez da versão 7, as fotos antigas sem status entram como PENDENTES.
 function reconstruirIndice() {
-  const lista = [];
+  const aprovadas = [], pendentes = [];
   const arquivos = pastaPrevias().getFiles();
   while (arquivos.hasNext()) {
     const f = arquivos.next();
     const nome = f.getName();
     const m = nome.match(/^dia-(\d)_([A-Z]{2})_/);
     if (!m) continue;
-    lista.push({ id: f.getId(), dia: Number(m[1]), uf: m[2], t: tempoDoNome(nome) });
+    const item = { id: f.getId(), dia: Number(m[1]), uf: m[2], t: tempoDoNome(nome) };
+    const st = String(f.getDescription() || "");
+    if (st === "aprovada") aprovadas.push(item);
+    else if (st !== "recusada") pendentes.push(item);
   }
-  lista.sort(function (a, b) { return b.t - a.t; });
-  salvarIndice(lista);
-  Logger.log("Índice da galeria montado com " + Math.min(lista.length, MAX_INDICE) + " fotos (de " + lista.length + ").");
-  return lista.slice(0, MAX_INDICE);
+  const ordem = function (a, b) { return b.t - a.t; };
+  aprovadas.sort(ordem); pendentes.sort(ordem);
+  salvarLista("indice_galeria", aprovadas, MAX_INDICE);
+  salvarLista("indice_pendentes", pendentes, MAX_PENDENTES);
+  PropertiesService.getScriptProperties().setProperty("moderacao_v7", "1");
+  Logger.log("Índices montados: " + aprovadas.length + " aprovadas · " + pendentes.length + " pendentes.");
+  return aprovadas.slice(0, MAX_INDICE);
 }
 
-// Últimas fotos (cópias leves), mais recentes primeiro.
+function imagemDe(id) {
+  const cache = CacheService.getScriptCache();
+  let img = cache.get("pv_" + id);
+  if (img) return img;
+  let arq = null;
+  try { arq = DriveApp.getFileById(id); } catch (e) { return null; }
+  if (!arq || arq.isTrashed()) return null;
+  const blob = arq.getBlob();
+  img = "data:" + (blob.getContentType() || "image/jpeg") + ";base64," + Utilities.base64Encode(blob.getBytes());
+  try { cache.put("pv_" + id, img, 1800); } catch (e) { /* imagem grande demais para o cache */ }
+  return img;
+}
+
+// Galeria pública: só fotos APROVADAS, mais recentes primeiro.
 function galeria(p) {
   const limite = Math.min(24, Math.max(1, Number(p.limite) || 12));
-  const cache = CacheService.getScriptCache();
   const indice = lerIndice();
   const fotos = [], removidas = [];
   for (let i = 0; i < indice.length && fotos.length < limite; i++) {
     const f = indice[i];
-    let img = cache.get("pv_" + f.id);
-    if (!img || SO_COM_ESTRELA) {
-      let arq = null;
-      try { arq = DriveApp.getFileById(f.id); } catch (e) { arq = null; }
-      if (!arq || arq.isTrashed()) { removidas.push(f.id); continue; } // apagada do Drive: sai da galeria
-      if (SO_COM_ESTRELA && !arq.isStarred()) continue;
-      if (!img) {
-        const blob = arq.getBlob();
-        img = "data:" + (blob.getContentType() || "image/jpeg") + ";base64," + Utilities.base64Encode(blob.getBytes());
-        try { cache.put("pv_" + f.id, img, 1800); } catch (e) { /* imagem grande demais para o cache */ }
-      }
-    }
+    const img = imagemDe(f.id);
+    if (!img) { removidas.push(f.id); continue; } // apagada do Drive: sai da galeria
     fotos.push({ dia: f.dia, uf: f.uf, t: f.t, img: img });
   }
   if (removidas.length) salvarIndice(indice.filter(function (f) { return removidas.indexOf(f.id) < 0; }));
   return { ok: true, fotos: fotos };
+}
+
+// ------------------------------------------------------------------ ADMIN (moderação)
+// login       : ?acao=login&h=<sha256("email|senha")>            → { ok, token }
+// admin_lista : ?acao=admin_lista&token=..&lista=pendentes|aprovadas&pular=0
+// moderar     : ?acao=moderar&token=..&id=..&decisao=aprovar|recusar|remover
+function admin(p) {
+  const cache = CacheService.getScriptCache();
+  if (p.acao === "login") {
+    const erros = Number(cache.get("login_erros") || 0);
+    if (erros >= 10) return { ok: false, erro: "Muitas tentativas. Espere 10 minutos." };
+    if (String(p.h || "").toLowerCase() !== ADMIN_HASH) {
+      cache.put("login_erros", String(erros + 1), 600);
+      return { ok: false, erro: "E-mail ou senha incorretos." };
+    }
+    const token = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
+    cache.put("adm_" + token, "1", 6 * 3600);
+    return { ok: true, token: token };
+  }
+  const token = String(p.token || "");
+  if (!/^[a-f0-9]{64}$/.test(token) || !cache.get("adm_" + token)) return { ok: false, erro: "sessao", sessao: false };
+
+  if (p.acao === "admin_lista") {
+    const chave = p.lista === "aprovadas" ? "indice_galeria" : "indice_pendentes";
+    const lista = lerLista(chave);
+    const pular = Math.max(0, Number(p.pular) || 0);
+    const fotos = [];
+    for (let i = pular; i < lista.length && fotos.length < 12; i++) {
+      const f = lista[i];
+      fotos.push({ id: f.id, dia: f.dia, uf: f.uf, t: f.t, img: imagemDe(f.id) || "" });
+    }
+    return { ok: true, total: lista.length, fotos: fotos,
+             pendentes: lerLista("indice_pendentes").length, aprovadas: lerLista("indice_galeria").length };
+  }
+
+  if (p.acao === "moderar") {
+    const id = String(p.id || "");
+    const decisao = String(p.decisao || "");
+    if (!/^[A-Za-z0-9_-]{10,80}$/.test(id)) return { ok: false, erro: "foto inválida" };
+    const trava = LockService.getScriptLock();
+    try {
+      trava.waitLock(10000);
+      const pend = lerLista("indice_pendentes"), apr = lerLista("indice_galeria");
+      const item = pend.concat(apr).filter(function (f) { return f.id === id; })[0];
+      if (!item) return { ok: false, erro: "foto não encontrada" };
+      const arq = DriveApp.getFileById(id);
+      const novaPend = pend.filter(function (f) { return f.id !== id; });
+      let novaApr = apr.filter(function (f) { return f.id !== id; });
+      if (decisao === "aprovar") {
+        arq.setDescription("aprovada");
+        novaApr.unshift(item);
+        novaApr.sort(function (a, b) { return b.t - a.t; });
+      } else if (decisao === "recusar" || decisao === "remover") {
+        arq.setDescription("recusada"); // não apaga nada: a foto continua no Drive
+      } else {
+        return { ok: false, erro: "decisão inválida" };
+      }
+      salvarLista("indice_pendentes", novaPend, MAX_PENDENTES);
+      salvarLista("indice_galeria", novaApr, MAX_INDICE);
+      return { ok: true, pendentes: novaPend.length, aprovadas: novaApr.length };
+    } finally {
+      trava.releaseLock();
+    }
+  }
+  return { ok: false, erro: "ação inválida" };
 }
 
 // ------------------------------------------------------------------ FOTOS ANTIGAS

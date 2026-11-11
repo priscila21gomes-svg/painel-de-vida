@@ -695,7 +695,7 @@
       if (foto !== st.resultadoFile) return;
       st.albumEnviado = true;
       $("album").className = "album enviado";
-      status.textContent = "✅ Sua foto foi para o álbum da campanha! Valeu por participar 🧡";
+      status.textContent = "✅ Sua foto foi enviada! Ela aparece na galeria depois de aprovada. Valeu por participar 🧡";
     } catch (e) {
       if (foto !== st.resultadoFile) return;
       $("album").className = "album falhou";

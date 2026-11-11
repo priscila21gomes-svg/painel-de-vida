@@ -345,3 +345,5 @@ button, input, a { font: inherit; }
 a.modo:hover { background: rgba(255, 255, 255, .18); }
 
 .btn-lateral-vazio { width: 64px; height: 64px; }
+
+.link-admin { color: #fff; font-size: 12px; opacity: .7; text-decoration: underline; }
