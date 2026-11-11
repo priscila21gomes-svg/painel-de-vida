@@ -220,6 +220,7 @@ function admin(p) {
   if (p.acao === "login") {
     const erros = Number(cache.get("login_erros") || 0);
     if (erros >= 10) return { ok: false, erro: "Muitas tentativas. Espere 10 minutos." };
+    if (!/^[0-9a-f]{64}$/.test(ADMIN_HASH)) return { ok: false, erro: "A senha do admin ainda não foi configurada no script (ADMIN_HASH). Cole o Code.gs que veio com o seu login." };
     if (String(p.h || "").toLowerCase() !== ADMIN_HASH) {
       cache.put("login_erros", String(erros + 1), 600);
       return { ok: false, erro: "E-mail ou senha incorretos." };

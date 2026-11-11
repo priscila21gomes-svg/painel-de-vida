@@ -65,9 +65,12 @@
       <h1>🔒 Acesso admin</h1>
       <p>Aprovação das fotos da galeria do Photobooth Peak Season.</p>
       <label for="email">E-mail</label>
-      <input type="email" id="email" autocomplete="username" required />
+      <input type="email" id="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required />
       <label for="senha">Senha</label>
-      <input type="password" id="senha" autocomplete="current-password" required />
+      <div style="position:relative">
+        <input type="password" id="senha" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required style="padding-right:52px" />
+        <button type="button" id="ver-senha" aria-label="Mostrar senha" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:20px;cursor:pointer">👁</button>
+      </div>
       <p class="erro" id="erro-login" role="alert"></p>
       <button class="btn btn-amarelo" id="entrar" type="submit">Entrar</button>
       <button class="btn" type="button" id="gerar" style="background:#f3e9e6;color:#6b4a40;font-size:13px;padding:8px">Gerar código para trocar a senha</button>
@@ -131,6 +134,7 @@
       $("entrar").disabled = true; $("entrar").textContent = "Entrando…";
       try {
         const r = await pedir({ acao: "login", h: await credencial() });
+        if (r.ok && !r.token) throw new Error(`O script do Google está na versão ${r.versao || "antiga"}. Cole o Code.gs novo e implante uma "Nova versão".`);
         if (!r.ok) throw new Error(r.erro || "Não foi possível entrar.");
         guardar.set("pb-admin", r.token);
         $("senha").value = "";
@@ -141,6 +145,7 @@
         $("entrar").disabled = false; $("entrar").textContent = "Entrar";
       }
     });
+    $("ver-senha").addEventListener("click", () => { const i = $("senha"); i.type = i.type === "password" ? "text" : "password"; });
     $("gerar").addEventListener("click", async () => {
       if (!$("email").value || !$("senha").value) { $("erro-login").textContent = "Preencha o novo e-mail e a nova senha."; return; }
       const h = await credencial();
