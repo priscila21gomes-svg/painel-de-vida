@@ -129,9 +129,12 @@
       console.warn("Galeria:", e);
       if (!gl.fotos.length) {
         $("gl-palco").hidden = true;
-        $("gl-status").textContent = e.message === "versao-antiga" || e.message === "versão antiga"
+        const m = String(e && e.message || "");
+        $("gl-status").textContent = m === "versao-antiga" || m === "versão antiga"
           ? "A galeria aparece aqui em breve."
-          : "Não foi possível carregar a galeria agora.";
+          : m === "sem resposta"
+            ? "A galeria está demorando para carregar. Atualize a página em instantes."
+            : "Não foi possível carregar a galeria agora" + (m && m !== "script não carregou" ? ` (${m})` : "") + ".";
       }
     } finally {
       gl.carregando = false;
