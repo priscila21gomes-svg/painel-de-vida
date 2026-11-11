@@ -1,5 +1,5 @@
 /**
- * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 7: galeria com aprovação do admin)
+ * PHOTOBOOTH PEAK SEASON → GOOGLE DRIVE (versão 8: fotos antigas liberadas, novas com aprovação)
  * ------------------------------------------------------------
  * Recebe a foto enviada pelo site (quando a pessoa toca em
  * "Enviar para o álbum da campanha") e salva numa pasta do Drive,
@@ -89,7 +89,7 @@ function falhou(id, motivo) {
 //   ?acao=status&id=...&callback=fn → responde fn({...}) dizendo se a foto chegou
 function doGet(e) {
   const p = (e && e.parameter) || {};
-  let corpo = { ok: true, servico: "photobooth-drive", versao: 7 };
+  let corpo = { ok: true, servico: "photobooth-drive", versao: 8 };
   if (p.acao === "galeria") {
     try { corpo = galeria(p); } catch (erro) { corpo = { ok: false, erro: String(erro) }; }
   } else if (p.acao === "login" || p.acao === "admin_lista" || p.acao === "moderar") {
@@ -128,7 +128,7 @@ const tempoDoNome = function (nome) {
 
 function lerLista(chave) {
   const props = PropertiesService.getScriptProperties();
-  if (!props.getProperty("moderacao_v7")) reconstruirIndice(); // 1ª vez na versão 7
+  if (!props.getProperty("moderacao_v8")) reconstruirIndice(); // 1ª vez na versão 8
   const bruto = props.getProperty(chave);
   return bruto ? JSON.parse(bruto) : [];
 }
@@ -154,8 +154,12 @@ function indexar(id, nome) {
 }
 
 // Monta os índices a partir da pasta "_galeria", lendo o status gravado em cada arquivo.
-// Na primeira vez da versão 7, as fotos antigas sem status entram como PENDENTES.
+// Fotos ANTIGAS (enviadas antes de a moderação começar) sem status → aparecem direto (aprovadas).
+// Fotos NOVAS sem status → ficam PENDENTES até você aprovar no admin.
 function reconstruirIndice() {
+  const props = PropertiesService.getScriptProperties();
+  let inicio = Number(props.getProperty("moderacao_inicio") || 0);
+  if (!inicio) { inicio = Date.now(); props.setProperty("moderacao_inicio", String(inicio)); }
   const aprovadas = [], pendentes = [];
   const arquivos = pastaPrevias().getFiles();
   while (arquivos.hasNext()) {
@@ -166,13 +170,15 @@ function reconstruirIndice() {
     const item = { id: f.getId(), dia: Number(m[1]), uf: m[2], t: tempoDoNome(nome) };
     const st = String(f.getDescription() || "");
     if (st === "aprovada") aprovadas.push(item);
-    else if (st !== "recusada") pendentes.push(item);
+    else if (st === "recusada") continue;
+    else if (item.t && item.t < inicio) aprovadas.push(item); // antiga: já liberada
+    else pendentes.push(item);
   }
   const ordem = function (a, b) { return b.t - a.t; };
   aprovadas.sort(ordem); pendentes.sort(ordem);
   salvarLista("indice_galeria", aprovadas, MAX_INDICE);
   salvarLista("indice_pendentes", pendentes, MAX_PENDENTES);
-  PropertiesService.getScriptProperties().setProperty("moderacao_v7", "1");
+  props.setProperty("moderacao_v8", "1");
   Logger.log("Índices montados: " + aprovadas.length + " aprovadas · " + pendentes.length + " pendentes.");
   return aprovadas.slice(0, MAX_INDICE);
 }
