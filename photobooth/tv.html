@@ -82,6 +82,12 @@
   .rk-vazio { color: #9a7a70; font-size: 26px; padding-top: 14px; }
   .rk-nota { position: absolute; left: 70px; bottom: 132px; right: 620px; font-size: 24px; font-weight: 600; opacity: .95; }
 
+  /* Melhores momentos: só fotos, sem QR, sem "ao vivo", sem barra */
+  body.melhores .ao-vivo, body.melhores #cena-galeria .qr-canto, body.melhores .barra-tempo { display: none; }
+  body.melhores .legenda { left: 0; right: 0; bottom: 70px; }
+  body.melhores .trilho { top: 200px; height: 760px; }
+  body.melhores .card { width: 390px; height: 693px; margin: -346px 0 0 -195px; }
+
   /* Voltar ao site: aparece ao mexer o mouse/tocar */
   #voltar { position: fixed; top: 16px; left: 16px; z-index: 40; padding: 12px 22px; border-radius: 40px; background: #fff; color: var(--vermelho);
             font-weight: 700; font-size: 18px; text-decoration: none; box-shadow: 0 6px 16px rgba(0,0,0,.3); transition: opacity .4s; }
@@ -101,13 +107,13 @@
     <!-- CENA 1: galeria ao vivo -->
     <section class="cena" id="cena-galeria">
       <div class="gl-topo">
-        <div class="gl-titulo"><h1>📸 Galeria de Fotos</h1><span class="ao-vivo"><i></i> AO VIVO</span></div>
+        <div class="gl-titulo"><h1 id="gl-h1">📸 Galeria de Fotos</h1><span class="ao-vivo"><i></i> AO VIVO</span></div>
       </div>
-      <div class="gl-sub">Quem já entrou no clima do Peak Season pelo Brasil!</div>
+      <div class="gl-sub" id="gl-sub">Quem já entrou no clima do Peak Season pelo Brasil!</div>
       <div class="trilho" id="trilho"></div>
       <div class="vazio" id="vazio" hidden>
         <img src="img/mascote.webp" alt="" />
-        <p>Seja o primeiro a aparecer aqui! Tire sua foto com a moldura do dia 📸</p>
+        <p id="vazio-txt">Seja o primeiro a aparecer aqui! Tire sua foto com a moldura do dia 📸</p>
       </div>
       <div class="legenda" id="legenda"></div>
       <div class="barra-tempo"><b id="barra"></b></div>
@@ -158,7 +164,12 @@
     const T_FOTOS = Math.max(10, Number(q.get("fotos")) || 60);   // segundos de galeria
     const T_CARTAZ = Math.max(5, Number(q.get("cartaz")) || 15);  // segundos de cartaz
     const T_RANKING = Math.max(5, Number(q.get("ranking")) || 15); // segundos de ranking
-    const T_FOTO = 3500;                                          // ms por foto no carrossel
+    // "Melhores momentos": depois que o último desafio fecha (ou com ?melhores=1), a TV mostra só as fotos.
+    // Para voltar ao ciclo completo (fotos → ranking → desafios), abra com ?melhores=0.
+    const ultimo = CFG.dias[CFG.dias.length - 1];
+    const fimCampanha = (() => { const [y, m, d] = ultimo.data.split("-").map(Number); return Date.UTC(y, m - 1, d, 3) + (24 + (CFG.horaFechamento ?? 6)) * 3600e3; })();
+    const MELHORES = q.get("melhores") === "1" || (q.get("melhores") !== "0" && (CFG.tvMelhoresMomentos === true || (CFG.tvMelhoresMomentos !== false && Date.now() >= fimCampanha)));
+    const T_FOTO = MELHORES ? 5000 : 3500;                        // ms por foto no carrossel
     const URL_DRIVE = (CFG.drive && CFG.drive.urlScript) || "";
     const UF = { AC:"Acre",AP:"Amapá",AM:"Amazonas",PA:"Pará",RO:"Rondônia",RR:"Roraima",TO:"Tocantins",AL:"Alagoas",BA:"Bahia",CE:"Ceará",
       MA:"Maranhão",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",RN:"Rio Grande do Norte",SE:"Sergipe",DF:"Distrito Federal",GO:"Goiás",
@@ -191,11 +202,11 @@
     let fotos = [], atual = 0, vistas = new Set(), primeiraCarga = true;
     async function atualizarFotos() {
       try {
-        const r = await pedir({ acao: "galeria", limite: 16 });
+        const r = await pedir({ acao: "galeria", limite: MELHORES ? 24 : 16 });
         if (!r || !r.ok || !Array.isArray(r.fotos)) return;
         try { localStorage.setItem("pb-tv-galeria", JSON.stringify(r.fotos)); } catch (e) { /* sem espaço: tudo bem */ }
         const chave = (f) => `${f.t}-${f.uf}-${f.dia}`;
-        const novas = r.fotos.map((f) => ({ ...f, k: chave(f), novo: !primeiraCarga && !vistas.has(chave(f)) }));
+        const novas = r.fotos.map((f) => ({ ...f, k: chave(f), novo: !MELHORES && !primeiraCarga && !vistas.has(chave(f)) }));
         novas.forEach((f) => vistas.add(f.k));
         primeiraCarga = false;
         const mudou = novas.map((f) => f.k).join() !== fotos.map((f) => f.k).join();
@@ -281,6 +292,11 @@
       requestAnimationFrame(() => requestAnimationFrame(() => { barra.style.transition = `width ${T_FOTOS}s linear`; barra.style.width = "100%"; }));
       clearInterval(girar);
       girar = setInterval(() => { if (fotos.length > 1) { atual = (atual + 1) % fotos.length; posicionar(); } }, T_FOTO);
+      if (MELHORES) {
+        // Só fotos: segue girando e busca as aprovadas de novo a cada volta.
+        setTimeout(() => { atualizarFotos(); cenaGaleria(); }, T_FOTOS * 1000);
+        return;
+      }
       setTimeout(cenaRanking, T_FOTOS * 1000);
     }
     function cenaCartaz() {
@@ -319,8 +335,17 @@
         fotos.forEach((f) => vistas.add(f.k)); primeiraCarga = false; montar();
       }
     } catch (e) { /* sem cópia salva */ }
-    atualizarFotos();
-    atualizarRanking().then(cenaGaleria);
+    if (MELHORES) {
+      document.body.classList.add("melhores");
+      document.title = "Peak Season · Melhores momentos";
+      $("gl-h1").textContent = "✨ Melhores momentos";
+      $("gl-sub").textContent = "Peak Season 2026 · Obrigado, time, por fazer acontecer! 🧡";
+      $("vazio-txt").textContent = "Os melhores momentos aparecem aqui em breve ✨";
+      atualizarFotos().then(cenaGaleria);
+    } else {
+      atualizarFotos();
+      atualizarRanking().then(cenaGaleria);
+    }
   })();
   </script>
 </body>
