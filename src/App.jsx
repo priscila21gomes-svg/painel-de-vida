@@ -158,13 +158,13 @@ function CardTitle({ children, color }) {
   );
 }
 
-function AnelProgresso({ pct, cor, tamanho = 64, espessura = 7 }) {
+function AnelProgresso({ pct, cor, tamanho = 64, espessura = 7, corTrilha = "rgba(255,255,255,0.15)" }) {
   const raio = (tamanho - espessura) / 2;
   const circ = 2 * Math.PI * raio;
   const offset = circ - (Math.max(0, Math.min(100, pct)) / 100) * circ;
   return (
     <svg width={tamanho} height={tamanho} style={{ transform: "rotate(-90deg)", flexShrink: 0 }}>
-      <circle cx={tamanho / 2} cy={tamanho / 2} r={raio} stroke="rgba(255,255,255,0.15)" strokeWidth={espessura} fill="none" />
+      <circle cx={tamanho / 2} cy={tamanho / 2} r={raio} stroke={corTrilha} strokeWidth={espessura} fill="none" />
       <circle cx={tamanho / 2} cy={tamanho / 2} r={raio} stroke={cor} strokeWidth={espessura} fill="none" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
     </svg>
   );
@@ -548,7 +548,7 @@ function Hoje({ state, update, setTab }) {
       )}
 
       {/* card de status — resumo rápido estilo Lumi */}
-      <div className="rounded-3xl p-5 lg:p-6 mb-4" style={{ background: `linear-gradient(135deg, #7A3F52, ${C.rose})` }}>
+      <div className="rounded-3xl p-5 lg:p-6 mb-4" style={{ background: `linear-gradient(135deg, #FFD9E6, #FBB8CF)` }}>
         <div className="flex gap-1.5 mb-5 overflow-x-auto">
           {[
             { id: "hoje", label: "Hoje" },
@@ -559,7 +559,7 @@ function Hoje({ state, update, setTab }) {
               key={m.id}
               onClick={() => setModoResumo(m.id)}
               className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0 transition-colors"
-              style={{ background: modoResumo === m.id ? "#fff" : "rgba(255,255,255,0.08)", color: modoResumo === m.id ? C.ink : "rgba(255,255,255,0.75)" }}
+              style={{ background: modoResumo === m.id ? "#fff" : "rgba(255,255,255,0.45)", color: modoResumo === m.id ? C.rose : C.inkSoft }}
             >
               {m.label}
             </button>
@@ -568,36 +568,36 @@ function Hoje({ state, update, setTab }) {
 
         <div className="flex items-center gap-4">
           <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
-            <AnelProgresso pct={resumoPorModo.pct} cor={resumoPorModo.cor} />
-            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{resumoPorModo.pct}%</div>
+            <AnelProgresso pct={resumoPorModo.pct} cor={resumoPorModo.cor} corTrilha="rgba(46,42,36,0.12)" />
+            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: C.ink }}>{resumoPorModo.pct}%</div>
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: "rgba(46,42,36,0.55)" }}>
               {modoResumo === "hoje" ? "A seguir" : modoResumo === "semana" ? "Progresso da semana" : "Aderência média"}
             </p>
             {modoResumo === "hoje" ? (
               proximoItemHoje ? (
                 <>
-                  <p className="text-white font-medium truncate">{proximoItemHoje.texto}</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>às {proximoItemHoje.hora}</p>
+                  <p className="font-medium truncate" style={{ color: C.ink }}>{proximoItemHoje.texto}</p>
+                  <p className="text-xs" style={{ color: "rgba(46,42,36,0.6)" }}>às {proximoItemHoje.hora}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-white font-medium">Agenda livre</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>Nenhum compromisso pela frente hoje</p>
+                  <p className="font-medium" style={{ color: C.ink }}>Agenda livre</p>
+                  <p className="text-xs" style={{ color: "rgba(46,42,36,0.6)" }}>Nenhum compromisso pela frente hoje</p>
                 </>
               )
             ) : (
-              <p className="text-white font-medium">{resumoPorModo.pct}% concluído</p>
+              <p className="font-medium" style={{ color: C.ink }}>{resumoPorModo.pct}% concluído</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mt-5">
           {resumoPorModo.stats.map((s) => (
-            <div key={s.label} className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: "rgba(255,255,255,0.06)" }}>
-              <div className="text-base font-bold text-white truncate">{s.valor}</div>
-              <div className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.55)" }}>{s.label}</div>
+            <div key={s.label} className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: "rgba(255,255,255,0.5)" }}>
+              <div className="text-base font-bold truncate" style={{ color: C.ink }}>{s.valor}</div>
+              <div className="text-[10px] truncate font-medium" style={{ color: "rgba(46,42,36,0.6)" }}>{s.label}</div>
             </div>
           ))}
         </div>
