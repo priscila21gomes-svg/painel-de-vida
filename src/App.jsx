@@ -548,7 +548,7 @@ function Hoje({ state, update, setTab }) {
       )}
 
       {/* card de status — resumo rápido estilo Lumi */}
-      <div className="rounded-3xl p-5 lg:p-6 mb-4" style={{ background: C.ink }}>
+      <div className="rounded-3xl p-5 lg:p-6 mb-4" style={{ background: `linear-gradient(135deg, #6B3B42, #8C4A3A)` }}>
         <div className="flex gap-1.5 mb-5 overflow-x-auto">
           {[
             { id: "hoje", label: "Hoje" },
