@@ -158,6 +158,18 @@ function CardTitle({ children, color }) {
   );
 }
 
+function AnelProgresso({ pct, cor, tamanho = 64, espessura = 7 }) {
+  const raio = (tamanho - espessura) / 2;
+  const circ = 2 * Math.PI * raio;
+  const offset = circ - (Math.max(0, Math.min(100, pct)) / 100) * circ;
+  return (
+    <svg width={tamanho} height={tamanho} style={{ transform: "rotate(-90deg)", flexShrink: 0 }}>
+      <circle cx={tamanho / 2} cy={tamanho / 2} r={raio} stroke="rgba(255,255,255,0.15)" strokeWidth={espessura} fill="none" />
+      <circle cx={tamanho / 2} cy={tamanho / 2} r={raio} stroke={cor} strokeWidth={espessura} fill="none" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconBtn({ onClick, children, title, danger }) {
   return (
     <button
@@ -177,7 +189,7 @@ function Input(props) {
   return (
     <input
       {...props}
-      className={`text-sm rounded-lg px-3 py-1.5 outline-none ${props.className || ""}`}
+      className={`text-sm rounded-lg px-3 py-1.5 outline-none min-w-0 ${props.className || ""}`}
       style={{ border: `1px solid ${C.line}`, color: C.ink, ...(props.style || {}) }}
     />
   );
@@ -351,6 +363,19 @@ function calcularAderencia(habito) {
   return diasPassados > 0 ? Math.round((marcados / diasPassados) * 100) : 0;
 }
 
+function calcularStreak(state) {
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const teveAtividade = (state.diaADia[iso] || []).some((it) => it.feito) || state.habitos.some((h) => h.marcados[iso]);
+    if (teveAtividade) streak++;
+    else break;
+  }
+  return streak;
+}
+
 function Hoje({ state, update, setTab }) {
   const hoje = new Date();
   const hojeISO = isoHoje();
@@ -398,14 +423,75 @@ function Hoje({ state, update, setTab }) {
   const toggleHabitoDia = (habitoId, iso) =>
     update((s) => ({ ...s, habitos: s.habitos.map((h) => (h.id === habitoId ? { ...h, marcados: { ...h.marcados, [iso]: !h.marcados[iso] } } : h)) }));
 
-  const tiles = [
-    { label: "Saúde", icon: HeartPulse, cor: C.rose, tab: "saude" },
-    { label: "Beleza", icon: Sparkle, cor: C.rose, tab: "beleza" },
-    { label: "Casa", icon: HomeIcon, cor: C.ochre, tab: "limpeza" },
-    { label: "Passeios", icon: MapPin, cor: C.slate, tab: "passeios" },
-    { label: "Desejos", icon: ShoppingBag, cor: C.rose, tab: "desejos" },
+  const areas = [
+    { label: "Agenda", icon: Calendar, cor: C.slate, tab: "semana" },
+    { label: "Tarefas", icon: Briefcase, cor: C.slate, tab: "profissional" },
+    { label: "Hábitos", icon: Repeat, cor: C.sage, tab: "habitos" },
     { label: "Financeiro", icon: Wallet, cor: C.ochre, tab: "financeiro" },
+    { label: "Saúde", icon: HeartPulse, cor: C.rose, tab: "saude" },
+    { label: "Casa", icon: HomeIcon, cor: C.ochre, tab: "limpeza" },
+    { label: "Metas", icon: Target, cor: C.coral, tab: "metas" },
+    { label: "Desejos", icon: ShoppingBag, cor: C.rose, tab: "desejos" },
   ];
+
+  // ---------- resumo do dia / semana / hábitos (card de status estilo Lumi) ----------
+  const [modoResumo, setModoResumo] = useState("hoje");
+  const [rascunho, setRascunho] = useState("");
+  const streak = calcularStreak(state);
+
+  const eventosHoje = state.eventos.filter((e) => e.data === hojeISO);
+  const itensHojeList = state.diaADia[hojeISO] || [];
+  const tarefasHojeAbertas = itensHojeList.filter((i) => !i.feito).length;
+  const pctHoje = itensHojeList.length ? Math.round((itensHojeList.filter((i) => i.feito).length / itensHojeList.length) * 100) : 0;
+  const habitosHojeTotal = state.habitos.length;
+  const habitosHojeFeitos = state.habitos.filter((h) => h.marcados[hojeISO]).length;
+  const proximoItemHoje = [...itensHojeList].filter((i) => !i.feito).sort((a, b) => a.hora.localeCompare(b.hora))[0];
+
+  const semanaTotalItens = diasSemana.reduce((acc, d) => acc + (state.semana[d] || []).length, 0);
+  const semanaFeitas = diasSemana.reduce((acc, d) => acc + (state.semana[d] || []).filter((t) => t.feito).length, 0);
+  const semanaDiasAtivos = diasSemana.filter((d) => (state.semana[d] || []).length > 0).length;
+  const pctSemana = semanaTotalItens ? Math.round((semanaFeitas / semanaTotalItens) * 100) : 0;
+
+  const aderenciaMedia = state.habitos.length ? Math.round(state.habitos.reduce((a, h) => a + calcularAderencia(h), 0) / state.habitos.length) : 0;
+  const melhorHabito = state.habitos.length ? state.habitos.reduce((best, h) => (calcularAderencia(h) > calcularAderencia(best) ? h : best), state.habitos[0]) : null;
+
+  const resumoPorModo = {
+    hoje: {
+      pct: pctHoje,
+      cor: C.coral,
+      stats: [
+        { label: "Compromissos", valor: eventosHoje.length },
+        { label: "Tarefas", valor: tarefasHojeAbertas },
+        { label: "Hábitos", valor: `${habitosHojeFeitos}/${habitosHojeTotal}` },
+      ],
+    },
+    semana: {
+      pct: pctSemana,
+      cor: C.slate,
+      stats: [
+        { label: "Tarefas", valor: semanaTotalItens },
+        { label: "Concluídas", valor: semanaFeitas },
+        { label: "Dias ativos", valor: `${semanaDiasAtivos}/7` },
+      ],
+    },
+    habitos: {
+      pct: aderenciaMedia,
+      cor: C.sage,
+      stats: [
+        { label: "Ativos", valor: state.habitos.length },
+        { label: "Aderência", valor: `${aderenciaMedia}%` },
+        { label: "Destaque", valor: melhorHabito ? melhorHabito.nome : "—" },
+      ],
+    },
+  }[modoResumo];
+
+  const adicionarRascunho = () => {
+    if (!rascunho.trim()) return;
+    const horaAtual = new Date().toTimeString().slice(0, 5);
+    const novos = [...itensHojeList, { id: uid(), hora: horaAtual, texto: rascunho.trim(), feito: false }].sort((a, b) => a.hora.localeCompare(b.hora));
+    update((s) => ({ ...s, diaADia: { ...s.diaADia, [hojeISO]: novos } }));
+    setRascunho("");
+  };
 
   const projetosDestaque = state.projetos
     .filter((p) => p.status !== "Concluído")
@@ -439,6 +525,11 @@ function Hoje({ state, update, setTab }) {
                 style={{ fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: "inherit", width: `${Math.max(state.nome.length, 3) + 1}ch` }}
               />
             </h2>
+            {streak > 0 && (
+              <div className="inline-flex items-center gap-1.5 text-xs font-semibold mt-2 px-2.5 py-1 rounded-full" style={{ background: C.paper, color: C.coral, border: `1px solid ${C.line}` }}>
+                <Flame size={13} color={C.coral} /> {streak} dia{streak > 1 ? "s" : ""} seguido{streak > 1 ? "s" : ""}
+              </div>
+            )}
             <p className="text-sm italic mt-2 max-w-xs" style={{ color: C.inkSoft }}>"{frase}"</p>
           </div>
           <div className="rounded-2xl px-4 py-3 text-center shrink-0" style={{ background: C.coral, color: "#fff" }}>
@@ -446,19 +537,6 @@ function Hoje({ state, update, setTab }) {
             <div className="text-2xl font-bold leading-none my-0.5">{hoje.getDate()}</div>
             <div className="text-[10px]" style={{ opacity: 0.85 }}>{diasSemana[(hoje.getDay() + 6) % 7].slice(0, 3)}</div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-5 relative">
-          {[
-            { icon: Calendar, texto: "Planeje seu dia" },
-            { icon: Target, texto: "Conquiste metas" },
-            { icon: Repeat, texto: "Construa hábitos" },
-            { icon: HeartPulse, texto: "Cuide de você" },
-            { icon: Sparkles, texto: "Realize sonhos" },
-          ].map((f, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: C.paper, color: C.inkSoft, border: `1px solid ${C.line}` }}>
-              <f.icon size={12} color={C.rose} /> {f.texto}
-            </div>
-          ))}
         </div>
       </div>
 
@@ -469,15 +547,107 @@ function Hoje({ state, update, setTab }) {
         </div>
       )}
 
-      {/* atalhos visuais */}
+      {/* card de status — resumo rápido estilo Lumi */}
+      <div className="rounded-3xl p-5 lg:p-6 mb-4" style={{ background: C.ink }}>
+        <div className="flex gap-1.5 mb-5 overflow-x-auto">
+          {[
+            { id: "hoje", label: "Hoje" },
+            { id: "semana", label: "Semana" },
+            { id: "habitos", label: "Hábitos" },
+          ].map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setModoResumo(m.id)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0 transition-colors"
+              style={{ background: modoResumo === m.id ? "#fff" : "rgba(255,255,255,0.08)", color: modoResumo === m.id ? C.ink : "rgba(255,255,255,0.75)" }}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
+            <AnelProgresso pct={resumoPorModo.pct} cor={resumoPorModo.cor} />
+            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{resumoPorModo.pct}%</div>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.5)" }}>
+              {modoResumo === "hoje" ? "A seguir" : modoResumo === "semana" ? "Progresso da semana" : "Aderência média"}
+            </p>
+            {modoResumo === "hoje" ? (
+              proximoItemHoje ? (
+                <>
+                  <p className="text-white font-medium truncate">{proximoItemHoje.texto}</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>às {proximoItemHoje.hora}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-white font-medium">Agenda livre</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>Nenhum compromisso pela frente hoje</p>
+                </>
+              )
+            ) : (
+              <p className="text-white font-medium">{resumoPorModo.pct}% concluído</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mt-5">
+          {resumoPorModo.stats.map((s) => (
+            <div key={s.label} className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="text-base font-bold text-white truncate">{s.valor}</div>
+              <div className="text-[10px] truncate" style={{ color: "rgba(255,255,255,0.55)" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* captura rápida */}
+      <Card className="mb-4">
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} color={C.coral} className="shrink-0" />
+          <Input
+            id="captura-rapida"
+            value={rascunho}
+            onChange={(e) => setRascunho(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && adicionarRascunho()}
+            placeholder="Escreva algo e eu organizo no seu dia de hoje..."
+            className="flex-1"
+          />
+          <button onClick={adicionarRascunho} className="rounded-lg w-8 h-8 flex items-center justify-center shrink-0" style={{ background: C.coral, color: "#fff" }}>
+            <Plus size={16} />
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {[
+            { texto: "Anotar um gasto", tab: "financeiro" },
+            { texto: "Planejar a semana", tab: "semana" },
+            { texto: "Nova tarefa", tab: null },
+          ].map((c) => (
+            <button
+              key={c.texto}
+              onClick={() => (c.tab ? setTab(c.tab) : document.getElementById("captura-rapida")?.focus())}
+              className="text-xs px-3 py-1.5 rounded-full"
+              style={{ background: C.cream, color: C.inkSoft, border: `1px solid ${C.line}` }}
+            >
+              {c.texto}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {/* suas áreas */}
       <div className="pv-tiles-grid mb-5">
-        {tiles.map((t) => (
-          <button key={t.label} onClick={() => setTab(t.tab)} className="rounded-2xl flex flex-col items-center justify-center gap-2 py-5" style={{ background: t.cor + "14", border: `1px solid ${t.cor}30` }}>
-            <t.icon size={26} color={t.cor} />
-            <span className="text-xs font-medium" style={{ color: t.cor }}>{t.label}</span>
+        {areas.map((a) => (
+          <button key={a.label} onClick={() => setTab(a.tab)} className="rounded-2xl flex flex-col items-center justify-center gap-2 py-5" style={{ background: a.cor + "14", border: `1px solid ${a.cor}30` }}>
+            <a.icon size={26} color={a.cor} />
+            <span className="text-xs font-medium" style={{ color: a.cor }}>{a.label}</span>
           </button>
         ))}
       </div>
+
+      <p className="text-xs uppercase tracking-widest font-semibold mb-3" style={{ color: C.inkSoft }}>Resumo detalhado</p>
 
       {/* corpo principal em duas colunas nas telas grandes */}
       <div className="pv-bento">
@@ -2046,13 +2216,13 @@ export default function PainelDaVida() {
         .pv-mobile-header { display: flex; }
         .pv-projetos-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
         .pv-tarefas-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-        .pv-tiles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+        .pv-tiles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
         @media (min-width: 800px) {
           .pv-sidebar { display: flex; }
           .pv-bottomnav { display: none; }
           .pv-mobile-header { display: none; }
           .pv-tarefas-grid { grid-template-columns: 1fr 1fr; }
-          .pv-tiles-grid { grid-template-columns: repeat(6, 1fr); }
+          .pv-tiles-grid { grid-template-columns: repeat(8, 1fr); }
           .pv-main { max-width: 60rem; padding-left: 2.5rem; padding-right: 2.5rem; padding-top: 2rem; padding-bottom: 3rem; }
         }
         @media (min-width: 1150px) {
