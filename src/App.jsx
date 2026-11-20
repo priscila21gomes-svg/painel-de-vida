@@ -549,7 +549,7 @@ function Hoje({ state, update, setTab }) {
       )}
 
       {/* card de status — resumo rápido estilo Lumi */}
-      <div className="rounded-3xl p-5 lg:p-6 mb-4" style={{ background: `linear-gradient(135deg, #FFD9E6, #FBB8CF)` }}>
+      <div className="rounded-3xl p-5 lg:p-6 mb-4" style={{ background: `linear-gradient(135deg, #F2E1C6, #DCBE8F)` }}>
         <div className="flex gap-1.5 mb-5 overflow-x-auto">
           {[
             { id: "hoje", label: "Hoje" },
@@ -560,7 +560,7 @@ function Hoje({ state, update, setTab }) {
               key={m.id}
               onClick={() => setModoResumo(m.id)}
               className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0 transition-colors"
-              style={{ background: modoResumo === m.id ? "#fff" : "rgba(255,255,255,0.45)", color: modoResumo === m.id ? C.rose : C.inkSoft }}
+              style={{ background: modoResumo === m.id ? "#fff" : "rgba(255,255,255,0.45)", color: modoResumo === m.id ? C.nude : C.inkSoft }}
             >
               {m.label}
             </button>
