@@ -430,7 +430,7 @@ function Hoje({ state, update, setTab }) {
     { label: "Financeiro", icon: Wallet, cor: C.ochre, tab: "financeiro" },
     { label: "Saúde", icon: HeartPulse, cor: C.rose, tab: "saude" },
     { label: "Casa", icon: HomeIcon, cor: C.ochre, tab: "limpeza" },
-    { label: "Metas", icon: Target, cor: C.coral, tab: "metas" },
+    { label: "Metas", icon: Target, cor: C.rose, tab: "metas" },
     { label: "Desejos", icon: ShoppingBag, cor: C.rose, tab: "desejos" },
   ];
 
@@ -458,7 +458,7 @@ function Hoje({ state, update, setTab }) {
   const resumoPorModo = {
     hoje: {
       pct: pctHoje,
-      cor: C.coral,
+      cor: C.rose,
       stats: [
         { label: "Compromissos", valor: eventosHoje.length },
         { label: "Tarefas", valor: tarefasHojeAbertas },
@@ -526,13 +526,13 @@ function Hoje({ state, update, setTab }) {
               />
             </h2>
             {streak > 0 && (
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold mt-2 px-2.5 py-1 rounded-full" style={{ background: C.paper, color: C.coral, border: `1px solid ${C.line}` }}>
-                <Flame size={13} color={C.coral} /> {streak} dia{streak > 1 ? "s" : ""} seguido{streak > 1 ? "s" : ""}
+              <div className="inline-flex items-center gap-1.5 text-xs font-semibold mt-2 px-2.5 py-1 rounded-full" style={{ background: C.paper, color: C.rose, border: `1px solid ${C.line}` }}>
+                <Flame size={13} color={C.rose} /> {streak} dia{streak > 1 ? "s" : ""} seguido{streak > 1 ? "s" : ""}
               </div>
             )}
             <p className="text-sm italic mt-2 max-w-xs" style={{ color: C.inkSoft }}>"{frase}"</p>
           </div>
-          <div className="rounded-2xl px-4 py-3 text-center shrink-0" style={{ background: C.coral, color: "#fff" }}>
+          <div className="rounded-2xl px-4 py-3 text-center shrink-0" style={{ background: C.rose, color: "#fff" }}>
             <div className="text-[10px] uppercase tracking-wide" style={{ opacity: 0.85 }}>{mesesNomes[hoje.getMonth()].slice(0, 3)}</div>
             <div className="text-2xl font-bold leading-none my-0.5">{hoje.getDate()}</div>
             <div className="text-[10px]" style={{ opacity: 0.85 }}>{diasSemana[(hoje.getDay() + 6) % 7].slice(0, 3)}</div>
@@ -606,7 +606,7 @@ function Hoje({ state, update, setTab }) {
       {/* captura rápida */}
       <Card className="mb-4">
         <div className="flex items-center gap-2">
-          <Sparkles size={16} color={C.coral} className="shrink-0" />
+          <Sparkles size={16} color={C.rose} className="shrink-0" />
           <Input
             id="captura-rapida"
             value={rascunho}
@@ -615,7 +615,7 @@ function Hoje({ state, update, setTab }) {
             placeholder="Escreva algo e eu organizo no seu dia de hoje..."
             className="flex-1"
           />
-          <button onClick={adicionarRascunho} className="rounded-lg w-8 h-8 flex items-center justify-center shrink-0" style={{ background: C.coral, color: "#fff" }}>
+          <button onClick={adicionarRascunho} className="rounded-lg w-8 h-8 flex items-center justify-center shrink-0" style={{ background: C.rose, color: "#fff" }}>
             <Plus size={16} />
           </button>
         </div>
